@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background-color: #07090f;
+  color: #e2e8f0;
+  font-family: 'Sora', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 4px; height: 4px; }
+::-webkit-scrollbar-track      { background: #0d1117; }
+::-webkit-scrollbar-thumb      { background: #1e2a3a; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover{ background: #22d3ee44; }
+
+/* ── Selection ────────────────────────────────────────────────────────── */
+::selection { background: #22d3ee33; color: #22d3ee; }
+
+/* ── Input autofill fix ───────────────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #161b27 inset;
+  -webkit-text-fill-color: #e2e8f0;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Reusable input class ─────────────────────────────────────────────── */
+@layer components {
+  .k-input {
+    @apply w-full bg-surface2 border border-bdr rounded-lg px-3 py-2.5 text-sm text-slate-200
+           placeholder-muted focus:outline-none focus:border-accent transition-colors duration-150;
+  }
+
+  .k-label {
+    @apply block text-xs text-muted uppercase tracking-widest mb-1.5;
+  }
+
+  .k-btn-primary {
+    @apply bg-accent text-bg font-semibold text-sm px-4 py-2.5 rounded-lg
+           hover:bg-cyan-300 active:scale-95 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .k-btn-ghost {
+    @apply text-muted text-sm px-4 py-2.5 rounded-lg border border-bdr
+           hover:border-accent/40 hover:text-slate-300 transition-all duration-150;
+  }
+
+  .k-card {
+    @apply bg-surface border border-bdr rounded-xl;
+  }
+
+  .k-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-bold;
+  }
+}
+
+/* ── Neon glow on accent elements ─────────────────────────────────────── */
+.glow-accent { box-shadow: 0 0 16px #22d3ee22; }
+.glow-kred   { box-shadow: 0 0 16px #4ade8022; }
