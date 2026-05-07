@@ -70,7 +70,7 @@ const createUser = async (req, res) => {
 
     const userRes = await client.query(
       'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING user_id, username, balance, joining_date',
-      [username, password]   // NOTE: hash password in production (e.g. bcrypt)
+      [username, password]
     );
     const user = userRes.rows[0];
 
@@ -98,7 +98,6 @@ const updateUser = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Update info table via join
     await client.query(`
       UPDATE info i SET phone=$1, email=$2, address=$3
       FROM user_info ui WHERE ui.info_id = i.info_id AND ui.user_id = $4
@@ -130,6 +129,9 @@ const deleteUser = async (req, res) => {
 };
 
 // ── POST transfer kreds between users ─────────────────────────────────────
+// TRIGGER CHANGE: trg_peer_transfer_balances now handles the two balance
+// UPDATE statements automatically when peer_transactions is inserted.
+// The backend only needs to: lock sender, verify balance, write ledger.
 const transferKreds = async (req, res) => {
   const { sender_id, receiver_id, amount, description } = req.body;
   const amt = parseFloat(amount);
@@ -162,15 +164,15 @@ const transferKreds = async (req, res) => {
     const { rows: recv } = await client.query('SELECT user_id FROM users WHERE user_id=$1', [receiver_id]);
     if (!recv.length) { const e = new Error('Receiver not found'); e.status = 404; throw e; }
 
-    // Debit / credit
-    await client.query('UPDATE users SET balance = balance - $1 WHERE user_id=$2', [amt, sender_id]);
-    await client.query('UPDATE users SET balance = balance + $1 WHERE user_id=$2', [amt, receiver_id]);
-
-    // Record in ledger
+    // Write ledger entry
     const { rows: [tx] } = await client.query(
       'INSERT INTO transactions (amount, description) VALUES ($1,$2) RETURNING transaction_id',
       [amt, description || 'Kred transfer']
     );
+
+    // Insert into peer_transactions — trg_peer_transfer_balances fires here
+    // and atomically debits sender + credits receiver.
+    // No manual balance UPDATE needed.
     await client.query(
       'INSERT INTO peer_transactions (transaction_id, sender_id, receiver_id) VALUES ($1,$2,$3)',
       [tx.transaction_id, sender_id, receiver_id]
@@ -223,4 +225,27 @@ const getUserTransactions = async (req, res) => {
   res.json(rows);
 };
 
-module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, transferKreds, getUserTransactions };
+// ── GET user balance audit history ────────────────────────────────────────
+// Available after trg_balance_audit is deployed in Supabase.
+const getUserBalanceAudit = async (req, res) => {
+  const { id } = req.params;
+  const { rows } = await db.query(`
+    SELECT audit_id, old_balance, new_balance, delta, changed_at
+    FROM balance_audit
+    WHERE user_id = $1
+    ORDER BY changed_at DESC
+    LIMIT 100
+  `, [id]);
+  res.json(rows);
+};
+
+module.exports = {
+  getUsers,
+  getUser,
+  createUser,
+  updateUser,
+  deleteUser,
+  transferKreds,
+  getUserTransactions,
+  getUserBalanceAudit,
+};

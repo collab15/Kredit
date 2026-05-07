@@ -28,7 +28,14 @@ const getFavours = async (req, res) => {
   res.json(rows);
 };
 
-// ── POST create a new favour (goes into pending) ───────────────────────────
+// ── POST create a new favour ───────────────────────────────────────────────
+// TRIGGER CHANGE: trg_auto_pending_favour fires AFTER INSERT ON favours and
+// automatically inserts a row into pending_favours (activation_status=FALSE).
+// The backend no longer needs a transaction wrapping two inserts — a single
+// INSERT into favours is sufficient; the pending row is guaranteed by the DB.
+//
+// trg_prevent_self_favour (BEFORE INSERT) enforces the self-favour rule at
+// the DB layer. The app-level check below is kept for a friendlier error msg.
 const createFavour = async (req, res) => {
   const { description, requestor_id, requestee_id } = req.body;
   if (!requestor_id || !requestee_id) {
@@ -38,61 +45,48 @@ const createFavour = async (req, res) => {
     const e = new Error('Cannot request a favour from yourself'); e.status = 400; throw e;
   }
 
-  const client = await db.pool.connect();
-  try {
-    await client.query('BEGIN');
+  // Single INSERT — trigger handles pending_favours automatically
+  const { rows: [f] } = await db.query(
+    'INSERT INTO favours (description, requestor_id, requestee_id) VALUES ($1,$2,$3) RETURNING favour_id',
+    [description || null, requestor_id, requestee_id]
+  );
 
-    const { rows: [f] } = await client.query(
-      'INSERT INTO favours (description, requestor_id, requestee_id) VALUES ($1,$2,$3) RETURNING favour_id',
-      [description || null, requestor_id, requestee_id]
-    );
-
-    await client.query(
-      'INSERT INTO pending_favours (favour_id, activation_status) VALUES ($1, false)',
-      [f.favour_id]
-    );
-
-    await client.query('COMMIT');
-    res.status(201).json({ favour_id: f.favour_id, message: 'Favour created and pending' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
+  res.status(201).json({ favour_id: f.favour_id, message: 'Favour created and pending' });
 };
 
 // ── PUT mark favour as completed ───────────────────────────────────────────
+// TRIGGER CHANGE: trg_complete_favour fires AFTER UPDATE OF activation_status
+// ON pending_favours.  When the status flips to TRUE the trigger atomically:
+//   1. Inserts into completed_favours with done_at = now()
+//   2. Deletes the row from pending_favours
+// The backend reduces to a single UPDATE — no manual DELETE + INSERT needed.
 const completeFavour = async (req, res) => {
   const { id } = req.params;
   const { review } = req.body;
 
-  const client = await db.pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Verify favour is pending
-    const { rows } = await client.query(
-      'SELECT favour_id FROM pending_favours WHERE favour_id=$1', [id]
-    );
-    if (!rows.length) {
-      const e = new Error('Favour is not in pending state'); e.status = 400; throw e;
-    }
-
-    await client.query('DELETE FROM pending_favours WHERE favour_id=$1', [id]);
-    await client.query(
-      'INSERT INTO completed_favours (favour_id, review) VALUES ($1,$2)',
-      [id, review || null]
-    );
-
-    await client.query('COMMIT');
-    res.json({ message: 'Favour marked as completed' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
+  // Verify favour is currently pending
+  const { rows } = await db.query(
+    'SELECT favour_id FROM pending_favours WHERE favour_id=$1', [id]
+  );
+  if (!rows.length) {
+    const e = new Error('Favour is not in pending state'); e.status = 400; throw e;
   }
+
+  // A single UPDATE flips the flag; the trigger handles the rest
+  await db.query(
+    'UPDATE pending_favours SET activation_status = TRUE WHERE favour_id=$1',
+    [id]
+  );
+
+  // Persist optional review text if provided
+  if (review) {
+    await db.query(
+      'UPDATE completed_favours SET review=$1 WHERE favour_id=$2',
+      [review, id]
+    );
+  }
+
+  res.json({ message: 'Favour marked as completed' });
 };
 
 // ── DELETE favour ──────────────────────────────────────────────────────────

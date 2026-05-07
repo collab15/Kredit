@@ -44,8 +44,8 @@ const getAgencies = async (req, res) => {
   const { rows } = await db.query(`
     SELECT o.org_id, o.api_key, a.scope, oi.delegate, oi.website, i.email, i.phone
     FROM orgs o
-    JOIN agencies a    ON o.org_id  = a.org_id
-    LEFT JOIN org_info oi ON o.org_id = oi.org_id
+    JOIN agencies a       ON o.org_id  = a.org_id
+    LEFT JOIN org_info oi ON o.org_id  = oi.org_id
     LEFT JOIN info i      ON oi.info_id = i.info_id
     ORDER BY o.org_id
   `);
@@ -57,8 +57,8 @@ const getPartnered = async (req, res) => {
   const { rows } = await db.query(`
     SELECT o.org_id, o.api_key, p.services, oi.delegate, oi.website, i.email, i.phone
     FROM orgs o
-    JOIN partnered p   ON o.org_id  = p.org_id
-    LEFT JOIN org_info oi ON o.org_id = oi.org_id
+    JOIN partnered p      ON o.org_id  = p.org_id
+    LEFT JOIN org_info oi ON o.org_id  = oi.org_id
     LEFT JOIN info i      ON oi.info_id = i.info_id
     ORDER BY o.org_id
   `);
@@ -110,6 +110,9 @@ const createOrg = async (req, res) => {
 };
 
 // ── POST agency rewards a user with kreds ─────────────────────────────────
+// TRIGGER CHANGE: trg_reward_credit_balance fires AFTER INSERT ON rewards
+// and automatically credits the user's balance.
+// The manual UPDATE users SET balance = balance + $1 has been removed.
 const rewardUser = async (req, res) => {
   const { org_id, user_id, amount, description } = req.body;
   const amt = parseFloat(amount);
@@ -137,14 +140,14 @@ const rewardUser = async (req, res) => {
     );
     if (!userCheck.length) { const e = new Error('User not found'); e.status = 404; throw e; }
 
-    // Credit user
-    await client.query('UPDATE users SET balance = balance + $1 WHERE user_id=$2', [amt, user_id]);
-
-    // Ledger entry
+    // Write ledger entry
     const { rows: [tx] } = await client.query(
       'INSERT INTO transactions (amount, description) VALUES ($1,$2) RETURNING transaction_id',
       [amt, description || 'Agency kred reward']
     );
+
+    // Insert into rewards — trg_reward_credit_balance fires here and
+    // automatically credits user balance. No manual UPDATE needed.
     await client.query(
       'INSERT INTO rewards (transaction_id, rewarder_id, org_id) VALUES ($1,$2,$3)',
       [tx.transaction_id, user_id, org_id]
