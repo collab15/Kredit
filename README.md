@@ -186,6 +186,180 @@ CREATE INDEX ON rewards(org_id);
 CREATE INDEX ON rewards(rewarder_id);
 CREATE INDEX ON transactions(time_stamp DESC);
 
+-- Kredit Triggers
+-- Run this in the Supabase SQL Editor
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Extra table to log every balance change
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS balance_audit (
+  audit_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID          NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  old_balance NUMERIC(12,2) NOT NULL,
+  new_balance NUMERIC(12,2) NOT NULL,
+  delta       NUMERIC(12,2) NOT NULL,
+  changed_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_balance_audit_user ON balance_audit(user_id);
+CREATE INDEX IF NOT EXISTS idx_balance_audit_time ON balance_audit(changed_at DESC);
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 1
+-- Stops a user from creating a favour with themselves
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_prevent_self_favour()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.requestor_id = NEW.requestee_id THEN
+    RAISE EXCEPTION 'Requestor and requestee cannot be the same user.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_self_favour ON favours;
+CREATE TRIGGER trg_prevent_self_favour
+  BEFORE INSERT ON favours
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_prevent_self_favour();
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 2
+-- When a favour is created, automatically add it to pending_favours
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_auto_pending_favour()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO pending_favours (favour_id, activation_status)
+  VALUES (NEW.favour_id, FALSE);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_auto_pending_favour ON favours;
+CREATE TRIGGER trg_auto_pending_favour
+  AFTER INSERT ON favours
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_auto_pending_favour();
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 3
+-- When a pending favour is marked TRUE, move it to completed_favours
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_complete_favour()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.activation_status = TRUE AND OLD.activation_status = FALSE THEN
+    -- Add to completed with a timestamp
+    INSERT INTO completed_favours (favour_id, done_at)
+    VALUES (NEW.favour_id, now());
+
+    -- Remove from pending
+    DELETE FROM pending_favours WHERE favour_id = NEW.favour_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_complete_favour ON pending_favours;
+CREATE TRIGGER trg_complete_favour
+  AFTER UPDATE OF activation_status ON pending_favours
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_complete_favour();
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 4
+-- When a peer transaction is recorded, debit the sender and credit the receiver
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_peer_transfer_balances()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_amount NUMERIC(12,2);
+BEGIN
+  -- Get the transfer amount from the transactions table
+  SELECT amount INTO v_amount
+  FROM   transactions
+  WHERE  transaction_id = NEW.transaction_id;
+
+  IF v_amount IS NULL THEN
+    RAISE EXCEPTION 'Transaction % not found.', NEW.transaction_id;
+  END IF;
+
+  -- Debit sender (balance CHECK constraint blocks overdraft)
+  UPDATE users SET balance = balance - v_amount WHERE user_id = NEW.sender_id;
+
+  -- Credit receiver
+  UPDATE users SET balance = balance + v_amount WHERE user_id = NEW.receiver_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_peer_transfer_balances ON peer_transactions;
+CREATE TRIGGER trg_peer_transfer_balances
+  AFTER INSERT ON peer_transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_peer_transfer_balances();
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 5
+-- When an agency reward is recorded, credit the user's balance
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_reward_credit_balance()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_amount NUMERIC(12,2);
+BEGIN
+  -- Get the reward amount from the transactions table
+  SELECT amount INTO v_amount
+  FROM   transactions
+  WHERE  transaction_id = NEW.transaction_id;
+
+  IF v_amount IS NULL THEN
+    RAISE EXCEPTION 'Transaction % not found.', NEW.transaction_id;
+  END IF;
+
+  UPDATE users SET balance = balance + v_amount WHERE user_id = NEW.rewarder_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_reward_credit_balance ON rewards;
+CREATE TRIGGER trg_reward_credit_balance
+  AFTER INSERT ON rewards
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_reward_credit_balance();
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TRIGGER 6
+-- Every time a user's balance changes, log the old and new values
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION fn_balance_audit()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.balance IS DISTINCT FROM NEW.balance THEN
+    INSERT INTO balance_audit (user_id, old_balance, new_balance, delta)
+    VALUES (NEW.user_id, OLD.balance, NEW.balance, NEW.balance - OLD.balance);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_balance_audit ON users;
+CREATE TRIGGER trg_balance_audit
+  AFTER UPDATE OF balance ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_balance_audit();
+
+
 ```
 
 ## 🧱 Tech Stack
