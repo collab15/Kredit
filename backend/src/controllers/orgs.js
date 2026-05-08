@@ -3,7 +3,7 @@ const db     = require('../db');
 const { v4: uuidv4 } = require('uuid');
 
 const ORG_SELECT = `
-  SELECT o.org_id, o.api_key, o.balance,
+  SELECT o.org_id, o.api_key,
          COALESCE(oi.name, oi.delegate) AS display_name,
          oi.name, oi.delegate, oi.website,
          i.email, i.phone, i.address,
@@ -43,7 +43,7 @@ const getMyOrg = async (req, res) => {
 // ── GET agencies only ──────────────────────────────────────────────────────
 const getAgencies = async (req, res) => {
   const { rows } = await db.query(`
-    SELECT o.org_id, o.api_key, o.balance, a.scope,
+    SELECT o.org_id, o.api_key, a.scope,
            COALESCE(oi.name, oi.delegate) AS display_name,
            oi.delegate, oi.website, i.email, i.phone
     FROM orgs o
@@ -58,7 +58,7 @@ const getAgencies = async (req, res) => {
 // ── GET partnered only ─────────────────────────────────────────────────────
 const getPartnered = async (req, res) => {
   const { rows } = await db.query(`
-    SELECT o.org_id, o.api_key, o.balance, p.services,
+    SELECT o.org_id, o.api_key, p.services,
            COALESCE(oi.name, oi.delegate) AS display_name,
            oi.delegate, oi.website, i.email, i.phone
     FROM orgs o

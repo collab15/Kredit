@@ -87,7 +87,6 @@ export default function AdminOrganizations() {
     )},
     { key: 'org_type',     label: 'Type',     render: (r) => <span className={`k-badge ${r.org_type === 'agency' ? 'bg-violet-500/10 text-violet-400' : 'bg-cyan-500/10 text-cyan-400'}`}>{r.org_type}</span> },
     { key: 'display_name', label: 'Name',     render: (r) => <span className="font-semibold text-white">{r.display_name || r.delegate || '—'}</span> },
-    { key: 'balance',      label: 'Balance',  render: (r) => <span className="font-mono text-kred">⚡ {parseFloat(r.balance || 0).toLocaleString()}</span> },
     { key: 'scope',        label: 'Scope / Services', render: (r) => <span className="text-slate-400 text-xs">{r.scope || r.services || '—'}</span> },
     { key: 'email',        label: 'Email',    render: (r) => r.email || <span className="text-muted">—</span> },
     { key: 'api_key',      label: 'API Key',  render: (r) => <span className="font-mono text-[10px] text-muted bg-surface2 border border-bdr px-2 py-1 rounded">{r.api_key?.slice(0, 18)}…</span> },

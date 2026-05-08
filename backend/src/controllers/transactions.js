@@ -153,26 +153,23 @@ const getStats = async (req, res) => {
   }
 
   if (role === 'org') {
-    const [bal, rewardCount, paymentCount] = await Promise.all([
-      db.query('SELECT balance FROM orgs WHERE org_id=$1', [id]),
+    const [rewardCount, paymentCount] = await Promise.all([
       db.query('SELECT COUNT(*) FROM rewards WHERE org_id=$1', [id]),
       db.query('SELECT COUNT(*) FROM org_payments WHERE org_id=$1', [id]),
     ]);
     return res.json({
-      balance:        parseFloat(bal.rows[0]?.balance || 0),
       total_rewards:  parseInt(rewardCount.rows[0].count),
       total_payments: parseInt(paymentCount.rows[0].count),
     });
   }
 
   // admin
-  const [users, orgs, favours, kreds, txCount, orgKreds] = await Promise.all([
+  const [users, orgs, favours, kreds, txCount] = await Promise.all([
     db.query('SELECT COUNT(*) FROM users'),
     db.query('SELECT COUNT(*) FROM orgs'),
     db.query('SELECT COUNT(*) FROM favours'),
     db.query('SELECT COALESCE(SUM(balance),0) AS total FROM users'),
     db.query('SELECT COUNT(*) FROM transactions'),
-    db.query('SELECT COALESCE(SUM(balance),0) AS total FROM orgs'),
   ]);
   res.json({
     total_users:        parseInt(users.rows[0].count),
@@ -180,7 +177,6 @@ const getStats = async (req, res) => {
     total_favours:      parseInt(favours.rows[0].count),
     total_kreds:        parseFloat(kreds.rows[0].total),
     total_transactions: parseInt(txCount.rows[0].count),
-    org_kreds:          parseFloat(orgKreds.rows[0].total),
   });
 };
 

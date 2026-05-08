@@ -49,22 +49,12 @@ export default function AdminDashboard() {
         <StatCard title="Total Users"         value={stats?.total_users}        icon={Users}          iconBg="bg-cyan-500/10"   iconColor="text-cyan-400"   loading={loading} />
         <StatCard title="Organizations"       value={stats?.total_orgs}         icon={Building2}      iconBg="bg-violet-500/10" iconColor="text-violet-400" loading={loading} />
         <StatCard title="Favours"             value={stats?.total_favours}      icon={Handshake}      iconBg="bg-amber-500/10"  iconColor="text-amber-400"  loading={loading} />
-        <StatCard title="User Kreds"          value={stats?.total_kreds}        icon={Coins}          iconBg="bg-green-500/10"  iconColor="text-green-400"  loading={loading} suffix="⚡ " />
+        <StatCard title="Kreds in Circulation" value={stats?.total_kreds}        icon={Coins}          iconBg="bg-green-500/10"  iconColor="text-green-400"  loading={loading} suffix="⚡ " />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <StatCard title="Total Transactions"  value={stats?.total_transactions} icon={ArrowLeftRight} iconBg="bg-pink-500/10"   iconColor="text-pink-400"   loading={loading} />
-        <div className="k-card p-5 flex items-center gap-4">
-          <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-            <TrendingUp size={15} className="text-accent" />
-          </div>
-          <div>
-            <p className="text-[10px] text-muted uppercase tracking-widest">Org Kreds</p>
-            <p className="font-mono text-2xl font-bold text-white mt-1">
-              {loading ? <span className="text-muted animate-pulse">—</span> : <>⚡ {(stats?.org_kreds || 0).toLocaleString()}</>}
-            </p>
-          </div>
-        </div>
+        <StatCard title="Network Activity"    value={stats?.total_transactions} icon={TrendingUp}     iconBg="bg-accent/10"     iconColor="text-accent"     loading={loading} />
       </div>
 
       <div className="grid grid-cols-5 gap-6">

@@ -25,7 +25,7 @@ const login = async (req, res) => {
 
   if (role === 'org') {
     const { rows } = await db.query(`
-      SELECT o.org_id, o.api_key, o.password, o.balance,
+      SELECT o.org_id, o.api_key, o.password,
              COALESCE(oi.name, oi.delegate, 'Organization') AS name,
              CASE WHEN a.org_id IS NOT NULL THEN 'agency'
                   WHEN p.org_id IS NOT NULL THEN 'partnered'
@@ -88,7 +88,7 @@ const me = async (req, res) => {
   const { id, role } = req.user;
   if (role === 'org') {
     const { rows } = await db.query(`
-      SELECT o.org_id, o.api_key, o.balance,
+      SELECT o.org_id, o.api_key,
              COALESCE(oi.name, oi.delegate) AS name,
              oi.delegate, oi.website,
              i.email, i.phone, i.address,
