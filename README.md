@@ -1,7 +1,5 @@
-# PactBase
-# Promises Etched Onto Eternity.
-A Real-World Project solving a real-world problem.
-Phase 2 is onto a gradual start
+# Kredit
+Tokenizing Wellfare Into Real World Value
 
 ## 📦 Installation
 
