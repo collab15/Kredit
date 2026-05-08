@@ -11,6 +11,7 @@ channel = "stable-25_05"
 [userenv.shared]
 PORT = "3001"
 CLIENT_URL = "http://localhost:5000"
+JWT_SECRET = "kredit_jwt_secret_2024_pactbase"
 
 [workflows]
 runButton = "Project"
