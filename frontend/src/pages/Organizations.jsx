@@ -8,6 +8,22 @@ import Modal from '../components/Modal';
 const EMPTY_ORG    = { org_type: 'agency', delegate: '', website: '', email: '', phone: '', address: '', services: '', scope: '' };
 const EMPTY_REWARD = { org_id: '', user_id: '', amount: '', description: '' };
 
+
+function Field({ label, name, state, setState, type = 'text', required, placeholder }) {
+  return (
+    <div>
+      <label className="k-label">{label}{required && <span className="text-danger ml-1">*</span>}</label>
+      <input
+        className="k-input"
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        value={state[name]}
+        onChange={(e) => setState(prev => ({ ...prev, [name]: e.target.value }))}
+      />
+    </div>
+  );
+}
 export default function Organizations() {
   const [orgs,        setOrgs]        = useState([]);
   const [users,       setUsers]       = useState([]);
@@ -75,19 +91,7 @@ export default function Organizations() {
     }
   };
 
-  const Field = ({ label, name, state, setState, type = 'text', required, placeholder }) => (
-    <div>
-      <label className="k-label">{label}{required && <span className="text-danger ml-1">*</span>}</label>
-      <input
-        className="k-input"
-        type={type}
-        required={required}
-        placeholder={placeholder}
-        value={state[name]}
-        onChange={(e) => setState(prev => ({ ...prev, [name]: e.target.value }))}
-      />
-    </div>
-  );
+
 
   const columns = [
     { key: 'icon',      label: '',           render: (r) => (

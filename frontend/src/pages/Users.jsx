@@ -10,6 +10,22 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'sho
 const EMPTY_USER   = { username: '', password: '', first_name: '', last_name: '', gender: '', age: '', email: '', phone: '', address: '' };
 const EMPTY_XFER   = { sender_id: '', receiver_id: '', amount: '', description: '' };
 
+
+function Field({ label, name, state, setState, type = 'text', required, placeholder }) {
+  return (
+    <div>
+      <label className="k-label">{label}{required && <span className="text-danger ml-1">*</span>}</label>
+      <input
+        className="k-input"
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        value={state[name]}
+        onChange={(e) => setState(prev => ({ ...prev, [name]: e.target.value }))}
+      />
+    </div>
+  );
+}
 export default function Users() {
   const [users,       setUsers]       = useState([]);
   const [loading,     setLoading]     = useState(true);
@@ -69,19 +85,7 @@ export default function Users() {
     }
   };
 
-  const Field = ({ label, name, state, setState, type = 'text', required, placeholder }) => (
-    <div>
-      <label className="k-label">{label}{required && <span className="text-danger ml-1">*</span>}</label>
-      <input
-        className="k-input"
-        type={type}
-        required={required}
-        placeholder={placeholder}
-        value={state[name]}
-        onChange={(e) => setState(prev => ({ ...prev, [name]: e.target.value }))}
-      />
-    </div>
-  );
+
 
   const columns = [
     { key: 'avatar',      label: '',          render: (r) => (
