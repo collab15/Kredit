@@ -38,13 +38,13 @@ export default function UserTransfer() {
   };
 
   return (
-    <div className="p-8 space-y-6 animate-fade-in">
-      <div>
+    <div className="p-8 space-y-6 animate-fade-in flex flex-col items-center">
+      <div className="w-full max-w-lg">
         <h1 className="font-mono text-2xl font-bold text-white">Transfer Kreds</h1>
         <p className="text-muted text-sm mt-1">Send kreds to another user or a partnered organization</p>
       </div>
 
-      <div className="max-w-lg">
+      <div className="w-full max-w-lg">
         <div className="k-card p-6 space-y-5">
           {/* Mode toggle */}
           <div className="grid grid-cols-2 gap-2">

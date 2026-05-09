@@ -162,6 +162,49 @@ input:-webkit-autofill:focus {
 }
 
 /* ───────────────────────────────────────────── */
+/* SELECT DROPDOWN STYLING                        */
+/* ───────────────────────────────────────────── */
+
+select.k-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  color: white;
+
+  /* Custom chevron arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B93A7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+
+  cursor: pointer;
+}
+
+select.k-input:focus {
+  color: white;
+}
+
+/* Style the dropdown panel itself (Chromium/Edge only — Firefox ignores most of these) */
+select.k-input option {
+  background-color: #131827;
+  color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+}
+
+select.k-input option:checked,
+select.k-input option:hover {
+  background-color: rgba(34, 197, 94, 0.18);
+  color: #22C55E;
+}
+
+select.k-input option[value=""] {
+  color: #6E7690;
+}
+
+/* ───────────────────────────────────────────── */
 /* COMPONENTS                                     */
 /* ───────────────────────────────────────────── */
 

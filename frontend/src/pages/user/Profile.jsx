@@ -38,14 +38,14 @@ export default function UserProfile() {
   if (loading) return <div className="p-8 flex items-center justify-center"><div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="p-8 space-y-6 animate-fade-in">
-      <div>
+    <div className="p-8 space-y-6 animate-fade-in flex flex-col items-center">
+      <div className="w-full max-w-lg">
         <h1 className="font-mono text-2xl font-bold text-white">My Profile</h1>
         <p className="text-muted text-sm mt-1">Update your personal information</p>
       </div>
 
       {/* Balance card */}
-      <div className="k-card p-5 flex items-center gap-4 max-w-sm">
+      <div className="k-card p-5 flex items-center gap-4 w-full max-w-lg">
         <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
           <UserCircle size={20} className="text-accent" />
         </div>
@@ -55,7 +55,7 @@ export default function UserProfile() {
         </div>
       </div>
 
-      <div className="max-w-lg k-card p-6">
+      <div className="w-full max-w-lg k-card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="First Name" name="first_name" state={form} setState={setForm} placeholder="John" />
