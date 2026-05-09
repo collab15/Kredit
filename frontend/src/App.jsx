@@ -22,6 +22,7 @@ import UserProfile       from './pages/user/Profile';
 import OrgDashboard    from './pages/org/Dashboard';
 import OrgTransactions from './pages/org/Transactions';
 import OrgProfile      from './pages/org/Profile';
+import OrgReward       from './pages/org/Reward';
 
 function AppLayout({ children }) {
   return (
@@ -117,6 +118,11 @@ export default function App() {
           <Route path="/org" element={
             <ProtectedRoute allowedRoles={['org']}>
               <AppLayout><OrgDashboard /></AppLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/org/reward" element={
+            <ProtectedRoute allowedRoles={['org']}>
+              <AppLayout><OrgReward /></AppLayout>
             </ProtectedRoute>
           } />
           <Route path="/org/transactions" element={

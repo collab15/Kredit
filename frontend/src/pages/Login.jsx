@@ -6,9 +6,9 @@ import { authApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const ROLES = [
-  { key: 'user',  label: 'User',  icon: User,        desc: 'Access your personal account' },
-  { key: 'admin', label: 'Admin', icon: ShieldCheck,  desc: 'Full system administration'   },
-  { key: 'org',   label: 'Org',   icon: Building2,    desc: 'Organization portal'          },
+  { key: 'user',  label: 'User',  icon: User       },
+  { key: 'admin', label: 'Admin', icon: ShieldCheck },
+  { key: 'org',   label: 'Org',   icon: Building2   },
 ];
 
 export default function Login() {
@@ -41,14 +41,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center relative overflow-hidden">
-      {/* Ambient blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-accent/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-500/10 blur-[140px] rounded-full" />
       </div>
 
       <div className="relative z-10 w-full max-w-md px-4">
-        {/* Logo */}
         <div className="flex items-center gap-3 justify-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-accent text-black flex items-center justify-center glow-accent">
             <Zap size={22} className="fill-black" />
@@ -67,20 +65,19 @@ export default function Login() {
 
           {/* Role selector */}
           <div className="grid grid-cols-3 gap-2">
-            {ROLES.map(({ key, label, icon: Icon, desc }) => (
+            {ROLES.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setRole(key)}
-                className={`p-3 rounded-xl border text-left transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 py-3 px-2 rounded-xl border transition-all ${
                   role === key
                     ? 'border-accent bg-accent/10 text-accent'
                     : 'border-bdr text-muted hover:border-accent/40 hover:text-slate-300'
                 }`}
               >
-                <Icon size={16} className="mb-1.5" />
-                <p className="text-xs font-semibold">{label}</p>
-                <p className="text-[10px] opacity-70 leading-tight mt-0.5">{desc}</p>
+                <Icon size={18} />
+                <span className="text-xs font-semibold">{label}</span>
               </button>
             ))}
           </div>
@@ -131,10 +128,7 @@ export default function Login() {
 
           <p className="text-center text-xs text-muted">
             New user?{' '}
-            <button
-              className="text-accent hover:underline"
-              onClick={() => navigate('/register')}
-            >
+            <button className="text-accent hover:underline" onClick={() => navigate('/register')}>
               Create an account
             </button>
           </p>

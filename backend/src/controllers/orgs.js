@@ -200,16 +200,9 @@ const rewardUser = async (req, res) => {
   }
 };
 
-// ── GET org balance audit ─────────────────────────────────────────────────
-const getOrgBalanceAudit = async (req, res) => {
-  const { id } = req.params;
-  const { role, id: callerId } = req.user;
-  const orgId = (role === 'org') ? callerId : id;
-  const { rows } = await db.query(`
-    SELECT audit_id, old_balance, new_balance, delta, changed_at
-    FROM org_balance_audit WHERE org_id=$1 ORDER BY changed_at DESC LIMIT 100
-  `, [orgId]);
-  res.json(rows);
+// ── GET org balance audit (orgs no longer have balances — returns empty) ───
+const getOrgBalanceAudit = async (_req, res) => {
+  res.json([]);
 };
 
 module.exports = { getOrgs, getOrg, getMyOrg, getAgencies, getPartnered, createOrg, updateOrg, deleteOrg, rewardUser, getOrgBalanceAudit };

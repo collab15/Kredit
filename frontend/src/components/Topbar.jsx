@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Handshake,
-  ArrowLeftRight, Zap, LogOut, User, Send, UserCircle,
+  ArrowLeftRight, Zap, LogOut, User, Send, UserCircle, Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,18 +21,26 @@ const USER_NAV = [
   { to: '/user/profile',        icon: UserCircle,      label: 'Profile'     },
 ];
 
-const ORG_NAV = [
-  { to: '/org',                 icon: LayoutDashboard, label: 'Dashboard'   },
-  { to: '/org/transactions',    icon: ArrowLeftRight,  label: 'Transactions'},
-  { to: '/org/profile',         icon: Building2,       label: 'Profile'     },
+const ORG_BASE_NAV = [
+  { to: '/org',              icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/org/transactions', icon: ArrowLeftRight,  label: 'Transactions'},
+  { to: '/org/profile',      icon: Building2,       label: 'Profile'     },
+];
+
+const ORG_AGENCY_NAV = [
+  { to: '/org',              icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/org/reward',       icon: Award,           label: 'Send Kreds'  },
+  { to: '/org/transactions', icon: ArrowLeftRight,  label: 'Transactions'},
+  { to: '/org/profile',      icon: Building2,       label: 'Profile'     },
 ];
 
 export default function Topbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const orgNav = user?.org_type === 'agency' ? ORG_AGENCY_NAV : ORG_BASE_NAV;
   const nav = user?.role === 'admin' ? ADMIN_NAV
-            : user?.role === 'org'   ? ORG_NAV
+            : user?.role === 'org'   ? orgNav
             : USER_NAV;
 
   const handleLogout = () => {
