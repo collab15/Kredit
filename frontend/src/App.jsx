@@ -4,8 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Topbar from './components/Topbar';
 
-import Login    from './pages/Login';
-import Register from './pages/Register';
+import Login      from './pages/Login';
+import AdminLogin from './pages/AdminLogin';
+import Register   from './pages/Register';
 
 import AdminDashboard     from './pages/admin/Dashboard';
 import AdminUsers         from './pages/admin/Users';
@@ -54,8 +55,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
-          <Route path="/login"    element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login"        element={<Login />} />
+          <Route path="/admin/login"  element={<AdminLogin />} />
+          <Route path="/register"     element={<Register />} />
 
           {/* Root redirect */}
           <Route path="/" element={<RoleRedirect />} />
