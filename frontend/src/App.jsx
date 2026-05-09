@@ -9,6 +9,7 @@ import AdminLogin from './pages/AdminLogin';
 import Register   from './pages/Register';
 
 import AdminDashboard     from './pages/admin/Dashboard';
+import AdminAdmins        from './pages/admin/Admins';
 import AdminUsers         from './pages/admin/Users';
 import AdminOrganizations from './pages/admin/Organizations';
 import AdminFavours       from './pages/admin/Favours';
@@ -66,6 +67,11 @@ export default function App() {
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AppLayout><AdminDashboard /></AppLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/admins" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppLayout><AdminAdmins /></AppLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={

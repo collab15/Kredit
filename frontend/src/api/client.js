@@ -28,6 +28,15 @@ export const authApi = {
   me:       ()       => api.get('/auth/me'),
 };
 
+// ── Admins ─────────────────────────────────────────────────────────────────
+export const adminsApi = {
+  getAll:  ()         => api.get('/admins'),
+  getOne:  (id)       => api.get(`/admins/${id}`),
+  create:  (data)     => api.post('/admins', data),
+  update:  (id, data) => api.put(`/admins/${id}`, data),
+  remove:  (id)       => api.delete(`/admins/${id}`),
+};
+
 // ── Users ──────────────────────────────────────────────────────────────────
 export const usersApi = {
   getAll:           ()          => api.get('/users'),

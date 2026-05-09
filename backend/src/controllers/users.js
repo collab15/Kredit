@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 
 const USER_SELECT = `
-  SELECT u.user_id, u.username, u.balance, u.joining_date, u.role,
+  SELECT u.user_id, u.username, u.balance, u.joining_date,
          ui.first_name, ui.last_name, ui.gender, ui.age,
          i.email, i.phone, i.address
   FROM users u
@@ -11,7 +11,7 @@ const USER_SELECT = `
 `;
 
 // ── GET all users (admin only) ─────────────────────────────────────────────
-const getUsers = async (req, res) => {
+const getUsers = async (_req, res) => {
   const { rows } = await db.query(USER_SELECT + ' ORDER BY u.joining_date DESC');
   res.json(rows);
 };
@@ -28,9 +28,9 @@ const getUser = async (req, res) => {
   res.json(rows[0]);
 };
 
-// ── POST create user (admin only) ─────────────────────────────────────────
+// ── POST create user (admin only) ──────────────────────────────────────────
 const createUser = async (req, res) => {
-  const { username, password, role = 'user', first_name, last_name, gender, age, email, phone, address } = req.body;
+  const { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
   if (!username || !password) {
     const e = new Error('username and password are required'); e.status = 400; throw e;
   }
@@ -44,8 +44,8 @@ const createUser = async (req, res) => {
     );
     const info_id = infoRes.rows[0].info_id;
     const userRes = await client.query(
-      'INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING user_id, username, balance, joining_date, role',
-      [username, hash, role]
+      'INSERT INTO users (username, password) VALUES ($1,$2) RETURNING user_id, username, balance, joining_date',
+      [username, hash]
     );
     const user = userRes.rows[0];
     await client.query(
@@ -62,14 +62,14 @@ const createUser = async (req, res) => {
   }
 };
 
-// ── PUT update user (admin updates any; user updates own profile) ───────────
+// ── PUT update user ────────────────────────────────────────────────────────
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { role: callerRole, id: callerId } = req.user;
   if (callerRole !== 'admin' && callerId !== id) {
     const e = new Error('Forbidden'); e.status = 403; throw e;
   }
-  const { first_name, last_name, gender, age, email, phone, address, password, role } = req.body;
+  const { first_name, last_name, gender, age, email, phone, address, password } = req.body;
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
@@ -77,15 +77,13 @@ const updateUser = async (req, res) => {
       UPDATE info i SET phone=$1, email=$2, address=$3
       FROM user_info ui WHERE ui.info_id = i.info_id AND ui.user_id = $4
     `, [phone, email, address, id]);
-    await client.query(`
-      UPDATE user_info SET first_name=$1, last_name=$2, gender=$3, age=$4 WHERE user_id=$5
-    `, [first_name, last_name, gender, age, id]);
+    await client.query(
+      'UPDATE user_info SET first_name=$1, last_name=$2, gender=$3, age=$4 WHERE user_id=$5',
+      [first_name, last_name, gender, age, id]
+    );
     if (password) {
       const hash = await bcrypt.hash(password, 10);
       await client.query('UPDATE users SET password=$1 WHERE user_id=$2', [hash, id]);
-    }
-    if (callerRole === 'admin' && role) {
-      await client.query('UPDATE users SET role=$1 WHERE user_id=$2', [role, id]);
     }
     await client.query('COMMIT');
     res.json({ message: 'User updated' });
@@ -232,10 +230,10 @@ const getUserBalanceAudit = async (req, res) => {
   if (role !== 'admin' && callerId !== id) {
     const e = new Error('Forbidden'); e.status = 403; throw e;
   }
-  const { rows } = await db.query(`
-    SELECT audit_id, old_balance, new_balance, delta, changed_at
-    FROM balance_audit WHERE user_id=$1 ORDER BY changed_at DESC LIMIT 100
-  `, [id]);
+  const { rows } = await db.query(
+    'SELECT audit_id, old_balance, new_balance, delta, changed_at FROM balance_audit WHERE user_id=$1 ORDER BY changed_at DESC LIMIT 100',
+    [id]
+  );
   res.json(rows);
 };
 

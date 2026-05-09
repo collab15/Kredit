@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, UserCircle, Edit2, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, UserCircle, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi } from '../../api/client';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-const EMPTY_USER   = { username: '', password: '', role: 'user', first_name: '', last_name: '', gender: '', age: '', email: '', phone: '', address: '' };
-const EMPTY_EDIT   = { first_name: '', last_name: '', gender: '', age: '', email: '', phone: '', address: '', password: '', role: 'user' };
+const EMPTY_USER = { username: '', password: '', first_name: '', last_name: '', gender: '', age: '', email: '', phone: '', address: '' };
+const EMPTY_EDIT = { first_name: '', last_name: '', gender: '', age: '', email: '', phone: '', address: '', password: '' };
 
 function Field({ label, name, state, setState, type = 'text', required, placeholder }) {
   return (
@@ -43,7 +43,7 @@ export default function AdminUsers() {
   const openEdit = (u) => {
     setEditUser(u);
     setEditForm({ first_name: u.first_name || '', last_name: u.last_name || '', gender: u.gender || '',
-      age: u.age || '', email: u.email || '', phone: u.phone || '', address: u.address || '', password: '', role: u.role });
+      age: u.age || '', email: u.email || '', phone: u.phone || '', address: u.address || '', password: '' });
   };
 
   const handleEdit = async (e) => {
@@ -59,14 +59,13 @@ export default function AdminUsers() {
   };
 
   const columns = [
-    { key: 'av',         label: '', render: () => <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center"><UserCircle size={14} className="text-accent" /></div> },
-    { key: 'username',   label: 'Username',  render: (r) => <span className="font-mono font-bold text-white">{r.username}</span> },
-    { key: 'role',       label: 'Role',      render: (r) => <span className={`k-badge ${r.role === 'admin' ? 'bg-violet-500/10 text-violet-400' : 'bg-accent/10 text-accent'}`}>{r.role}</span> },
-    { key: 'name',       label: 'Name',      render: (r) => r.first_name ? `${r.first_name} ${r.last_name}` : <span className="text-muted">—</span> },
-    { key: 'balance',    label: 'Balance',   render: (r) => <span className="font-mono text-kred font-bold">⚡ {parseFloat(r.balance || 0).toLocaleString()}</span> },
-    { key: 'email',      label: 'Email',     render: (r) => r.email || <span className="text-muted">—</span> },
-    { key: 'joining_date', label: 'Joined',  render: (r) => <span className="text-muted text-xs">{fmtDate(r.joining_date)}</span> },
-    { key: 'actions',    label: '', render: (r) => (
+    { key: 'av',       label: '', render: () => <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center"><UserCircle size={14} className="text-accent" /></div> },
+    { key: 'username', label: 'Username', render: (r) => <span className="font-mono font-bold text-white">{r.username}</span> },
+    { key: 'name',     label: 'Name',    render: (r) => r.first_name ? `${r.first_name} ${r.last_name || ''}`.trim() : <span className="text-muted">—</span> },
+    { key: 'balance',  label: 'Balance', render: (r) => <span className="font-mono text-kred font-bold">⚡ {parseFloat(r.balance || 0).toLocaleString()}</span> },
+    { key: 'email',    label: 'Email',   render: (r) => r.email || <span className="text-muted">—</span> },
+    { key: 'joining_date', label: 'Joined', render: (r) => <span className="text-muted text-xs">{fmtDate(r.joining_date)}</span> },
+    { key: 'actions',  label: '', render: (r) => (
       <div className="flex gap-2">
         <button onClick={() => openEdit(r)} className="p-1.5 rounded text-muted hover:text-accent hover:bg-accent/10 transition-all" title="Edit"><Edit2 size={13} /></button>
         <button onClick={() => handleDelete(r.user_id, r.username)} className="p-1.5 rounded text-muted hover:text-danger hover:bg-danger/10 transition-all" title="Delete"><Trash2 size={13} /></button>
@@ -97,13 +96,6 @@ export default function AdminUsers() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Username" name="username" state={form} setState={setForm} required placeholder="john_doe" />
               <Field label="Password" name="password" state={form} setState={setForm} type="password" required placeholder="••••••••" />
-            </div>
-            <div>
-              <label className="k-label">Role</label>
-              <select className="k-input" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="First Name" name="first_name" state={form} setState={setForm} placeholder="John" />
@@ -137,13 +129,6 @@ export default function AdminUsers() {
       {editUser && (
         <Modal title={`Edit ${editUser.username}`} onClose={() => setEditUser(null)} maxWidth="max-w-lg">
           <form onSubmit={handleEdit} className="space-y-4">
-            <div>
-              <label className="k-label">Role</label>
-              <select className="k-input" value={editForm.role} onChange={e => setEditForm(p => ({ ...p, role: e.target.value }))}>
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="First Name" name="first_name" state={editForm} setState={setEditForm} placeholder="John" />
               <Field label="Last Name"  name="last_name"  state={editForm} setState={setEditForm} placeholder="Doe" />

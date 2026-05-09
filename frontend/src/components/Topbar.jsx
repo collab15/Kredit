@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Handshake,
-  ArrowLeftRight, Zap, LogOut, User, Send, UserCircle, Award,
+  ArrowLeftRight, Zap, LogOut, User, Send, UserCircle, Award, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const ADMIN_NAV = [
   { to: '/admin',               icon: LayoutDashboard, label: 'Dashboard'    },
+  { to: '/admin/admins',        icon: ShieldCheck,     label: 'Admins'       },
   { to: '/admin/users',         icon: Users,           label: 'Users'        },
   { to: '/admin/organizations', icon: Building2,       label: 'Organizations'},
   { to: '/admin/favours',       icon: Handshake,       label: 'Favours'      },

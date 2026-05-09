@@ -9,18 +9,30 @@ const login = async (req, res) => {
     const e = new Error('identifier, password and role are required'); e.status = 400; throw e;
   }
 
-  if (role === 'user' || role === 'admin') {
+  if (role === 'admin') {
     const { rows } = await db.query(
-      'SELECT user_id, username, password, role FROM users WHERE username = $1',
+      'SELECT admin_id, username, password FROM admins WHERE username = $1',
+      [identifier]
+    );
+    if (!rows.length) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
+    const admin = rows[0];
+    const valid = await bcrypt.compare(password, admin.password);
+    if (!valid) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
+    const token = sign({ id: admin.admin_id, role: 'admin', username: admin.username });
+    return res.json({ token, role: 'admin', username: admin.username, id: admin.admin_id });
+  }
+
+  if (role === 'user') {
+    const { rows } = await db.query(
+      'SELECT user_id, username, password FROM users WHERE username = $1',
       [identifier]
     );
     if (!rows.length) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
     const user = rows[0];
-    if (user.role !== role) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
-    const token = sign({ id: user.user_id, role: user.role, username: user.username });
-    return res.json({ token, role: user.role, username: user.username, id: user.user_id });
+    const token = sign({ id: user.user_id, role: 'user', username: user.username });
+    return res.json({ token, role: 'user', username: user.username, id: user.user_id });
   }
 
   if (role === 'org') {
@@ -48,7 +60,7 @@ const login = async (req, res) => {
   const e = new Error('Invalid role'); e.status = 400; throw e;
 };
 
-// ── Register (new user) ────────────────────────────────────────────────────
+// ── Register (new user only) ───────────────────────────────────────────────
 const register = async (req, res) => {
   const { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
   if (!username || !password) {
@@ -64,8 +76,8 @@ const register = async (req, res) => {
     );
     const info_id = infoRes.rows[0].info_id;
     const userRes = await client.query(
-      'INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING user_id, username, balance, joining_date, role',
-      [username, hash, 'user']
+      'INSERT INTO users (username, password) VALUES ($1,$2) RETURNING user_id, username, balance, joining_date',
+      [username, hash]
     );
     const user = userRes.rows[0];
     await client.query(
@@ -86,6 +98,14 @@ const register = async (req, res) => {
 // ── Get current session profile ────────────────────────────────────────────
 const me = async (req, res) => {
   const { id, role } = req.user;
+
+  if (role === 'admin') {
+    const { rows } = await db.query(
+      'SELECT admin_id, username, joining_date FROM admins WHERE admin_id = $1', [id]
+    );
+    return res.json(rows[0] ? { ...rows[0], role: 'admin' } : {});
+  }
+
   if (role === 'org') {
     const { rows } = await db.query(`
       SELECT o.org_id, o.api_key,
@@ -105,8 +125,10 @@ const me = async (req, res) => {
     `, [id]);
     return res.json(rows[0] || {});
   }
+
+  // user
   const { rows } = await db.query(`
-    SELECT u.user_id, u.username, u.balance, u.joining_date, u.role,
+    SELECT u.user_id, u.username, u.balance, u.joining_date,
            ui.first_name, ui.last_name, ui.gender, ui.age,
            i.email, i.phone, i.address
     FROM users u
