@@ -11,6 +11,8 @@ cd pactbase/frontend
 npm install
 cd ../backend
 npm install
+cd ..
+npm install        # installs concurrently at root
 ```
 
 ## 🚀 Running the App
@@ -18,7 +20,6 @@ npm install
 From the root `kredit/` folder, run both frontend and backend together:
 
 ```bash
-npm install        # installs concurrently at root
 npm run dev        # starts both servers
 ```
 
