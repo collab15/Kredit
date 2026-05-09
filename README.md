@@ -51,17 +51,27 @@ CREATE DATABASE kredit;
 -- KREDIT — Full PostgreSQL DDL
 -- ============================================================
 
--- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- ADMINS
+-- ============================================================
+CREATE TABLE admins (
+  admin_id     UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username     TEXT        NOT NULL UNIQUE,
+  password     TEXT        NOT NULL,
+  joining_date TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- ============================================================
 -- INFO  (shared contact table for users and orgs)
 -- ============================================================
 CREATE TABLE info (
-  info_id   UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
-  phone     TEXT,
-  email     TEXT,
-  address   TEXT
+  info_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  phone   TEXT,
+  email   TEXT,
+  address TEXT
 );
 
 -- ============================================================
@@ -81,8 +91,8 @@ CREATE TABLE users (
 -- USER_INFO  (extends info, links to users — table-per-type)
 -- ============================================================
 CREATE TABLE user_info (
-  info_id    UUID  PRIMARY KEY REFERENCES info(info_id)  ON DELETE CASCADE,
-  user_id    UUID  NOT NULL    REFERENCES users(user_id) ON DELETE CASCADE,
+  info_id    UUID PRIMARY KEY REFERENCES info(info_id)  ON DELETE CASCADE,
+  user_id    UUID NOT NULL    REFERENCES users(user_id) ON DELETE CASCADE,
   first_name TEXT,
   last_name  TEXT,
   gender     TEXT,
@@ -92,11 +102,24 @@ CREATE TABLE user_info (
 );
 
 -- ============================================================
+-- BALANCE AUDIT
+-- ============================================================
+CREATE TABLE balance_audit (
+  audit_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID          NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  old_balance NUMERIC(14,2) NOT NULL,
+  new_balance NUMERIC(14,2) NOT NULL,
+  delta       NUMERIC(14,2) NOT NULL,
+  changed_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+-- ============================================================
 -- ORGS
 -- ============================================================
 CREATE TABLE orgs (
-  org_id  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  api_key TEXT NOT NULL UNIQUE
+  org_id   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  api_key  TEXT NOT NULL UNIQUE,
+  password TEXT
 );
 
 -- ============================================================
@@ -106,7 +129,8 @@ CREATE TABLE org_info (
   info_id  UUID PRIMARY KEY REFERENCES info(info_id) ON DELETE CASCADE,
   org_id   UUID NOT NULL    REFERENCES orgs(org_id)  ON DELETE CASCADE,
   delegate TEXT,
-  website  TEXT
+  website  TEXT,
+  name     TEXT
 );
 
 -- ============================================================
@@ -134,15 +158,15 @@ CREATE TABLE favours (
   CONSTRAINT no_self_favour CHECK (requestor_id <> requestee_id)
 );
 
+CREATE TABLE pending_favours (
+  favour_id         UUID    PRIMARY KEY REFERENCES favours(favour_id) ON DELETE CASCADE,
+  activation_status BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 CREATE TABLE completed_favours (
   favour_id UUID        PRIMARY KEY REFERENCES favours(favour_id) ON DELETE CASCADE,
   done_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   review    TEXT
-);
-
-CREATE TABLE pending_favours (
-  favour_id         UUID    PRIMARY KEY REFERENCES favours(favour_id) ON DELETE CASCADE,
-  activation_status BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- ============================================================
@@ -171,6 +195,12 @@ CREATE TABLE rewards (
   org_id         UUID NOT NULL    REFERENCES orgs(org_id)                 ON DELETE CASCADE
 );
 
+CREATE TABLE org_payments (
+  transaction_id UUID PRIMARY KEY REFERENCES transactions(transaction_id) ON DELETE CASCADE,
+  payer_id       UUID NOT NULL    REFERENCES users(user_id)               ON DELETE CASCADE,
+  org_id         UUID NOT NULL    REFERENCES orgs(org_id)                 ON DELETE CASCADE
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -183,30 +213,13 @@ CREATE INDEX ON peer_transactions(receiver_id);
 CREATE INDEX ON rewards(org_id);
 CREATE INDEX ON rewards(rewarder_id);
 CREATE INDEX ON transactions(time_stamp DESC);
+CREATE INDEX ON balance_audit(user_id);
+CREATE INDEX ON balance_audit(changed_at DESC);
 
--- Kredit Triggers
--- Run this in the Supabase SQL Editor
-
--- ─────────────────────────────────────────────────────────────────────────
--- Extra table to log every balance change
--- ─────────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS balance_audit (
-  audit_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID          NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-  old_balance NUMERIC(12,2) NOT NULL,
-  new_balance NUMERIC(12,2) NOT NULL,
-  delta       NUMERIC(12,2) NOT NULL,
-  changed_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_balance_audit_user ON balance_audit(user_id);
-CREATE INDEX IF NOT EXISTS idx_balance_audit_time ON balance_audit(changed_at DESC);
-
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 1
 -- Stops a user from creating a favour with themselves
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_prevent_self_favour()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -223,11 +236,10 @@ CREATE TRIGGER trg_prevent_self_favour
   FOR EACH ROW
   EXECUTE FUNCTION fn_prevent_self_favour();
 
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 2
 -- When a favour is created, automatically add it to pending_favours
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_auto_pending_favour()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -243,11 +255,10 @@ CREATE TRIGGER trg_auto_pending_favour
   FOR EACH ROW
   EXECUTE FUNCTION fn_auto_pending_favour();
 
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 3
 -- When a pending favour is marked TRUE, move it to completed_favours
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_complete_favour()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -269,11 +280,10 @@ CREATE TRIGGER trg_complete_favour
   FOR EACH ROW
   EXECUTE FUNCTION fn_complete_favour();
 
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 4
 -- When a peer transaction is recorded, debit the sender and credit the receiver
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_peer_transfer_balances()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -304,11 +314,10 @@ CREATE TRIGGER trg_peer_transfer_balances
   FOR EACH ROW
   EXECUTE FUNCTION fn_peer_transfer_balances();
 
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 5
 -- When an agency reward is recorded, credit the user's balance
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_reward_credit_balance()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -335,11 +344,41 @@ CREATE TRIGGER trg_reward_credit_balance
   FOR EACH ROW
   EXECUTE FUNCTION fn_reward_credit_balance();
 
-
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 -- TRIGGER 6
+-- When a user pays an org, debit the user's balance
+-- ============================================================
+CREATE OR REPLACE FUNCTION fn_org_payment_debit()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_amount NUMERIC(12,2);
+BEGIN
+  -- Get the payment amount from the transactions table
+  SELECT amount INTO v_amount
+  FROM   transactions
+  WHERE  transaction_id = NEW.transaction_id;
+
+  IF v_amount IS NULL THEN
+    RAISE EXCEPTION 'Transaction % not found.', NEW.transaction_id;
+  END IF;
+
+  -- Debit payer (balance CHECK constraint blocks overdraft)
+  UPDATE users SET balance = balance - v_amount WHERE user_id = NEW.payer_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_org_payment_debit ON org_payments;
+CREATE TRIGGER trg_org_payment_debit
+  AFTER INSERT ON org_payments
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_org_payment_debit();
+
+-- ============================================================
+-- TRIGGER 7
 -- Every time a user's balance changes, log the old and new values
--- ─────────────────────────────────────────────────────────────────────────
+-- ============================================================
 CREATE OR REPLACE FUNCTION fn_balance_audit()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -356,8 +395,6 @@ CREATE TRIGGER trg_balance_audit
   AFTER UPDATE OF balance ON users
   FOR EACH ROW
   EXECUTE FUNCTION fn_balance_audit();
-
-
 ```
 
 ## 🧱 Tech Stack
