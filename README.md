@@ -6,8 +6,8 @@ Tokenizing Wellfare Into Real World Value
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/AhmedShehryar-work/PactBase
-cd pactbase/frontend
+git clone https://github.com/collab15/Kredit
+cd kredit/frontend
 npm install
 cd ../backend
 npm install
