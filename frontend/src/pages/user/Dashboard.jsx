@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Coins, ArrowLeftRight, Handshake, TrendingUp } from 'lucide-react';
+import { Coins, ArrowLeftRight, Handshake, TrendingUp, TrendingDown } from 'lucide-react';
 import { transactionsApi, favoursApi, usersApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import StatCard from '../../components/StatCard';
@@ -9,12 +9,16 @@ const fmtTime = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short',
 
 const TX_COLS = [
   { key: 'type',        label: 'Type',      render: (r) => {
-    const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-accent/10 text-accent';
-    return <span className={`k-badge ${cls}`}>{r.type}</span>;
+    const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'favour_compensation' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-orange-100 text-orange-600' : 'bg-accent/10 text-accent';
+    return <span className={`k-badge ${cls}`}>{r.type?.replace('_', ' ')}</span>;
   }},
-  { key: 'direction',   label: 'Direction', render: (r) => <span className={`text-xs font-medium ${r.direction === 'sent' ? 'text-danger' : 'text-kred'}`}>{r.direction}</span> },
+  { key: 'direction',   label: 'Direction', render: (r) => (
+    <div className={`flex items-center gap-1 text-xs font-medium ${r.direction === 'sent' ? 'text-danger' : 'text-kred'}`}>
+      {r.direction === 'sent' ? <TrendingDown size={12} /> : <TrendingUp size={12} />} {r.direction}
+    </div>
+  )},
   { key: 'counterpart', label: 'Party'  },
-  { key: 'amount',      label: 'Amount',    render: (r) => <span className={`font-mono ${r.direction === 'sent' ? 'text-danger' : 'text-kred'}`}>{r.direction === 'sent' ? '-' : '+'}⚡ {parseFloat(r.amount).toLocaleString()}</span> },
+  { key: 'amount',      label: 'Amount',    render: (r) => <span className={`font-mono font-bold ${r.direction === 'sent' ? 'text-danger' : 'text-kred'}`}>{r.direction === 'sent' ? '-' : '+'}⚡ {parseFloat(r.amount).toLocaleString()}</span> },
   { key: 'time_stamp',  label: 'Time',      render: (r) => <span className="text-muted text-xs">{fmtTime(r.time_stamp)}</span> },
 ];
 

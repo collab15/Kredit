@@ -35,7 +35,7 @@ function AppLayout({ children }) {
       </div>
       <div className="fixed inset-0 opacity-[0.015] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
       <Topbar />
-      <main className="relative z-10 max-w-[1600px] mx-auto pt-20">
+      <main className="relative z-10 max-w-[1600px] mx-auto pt-5">
         {children}
       </main>
     </div>

@@ -1,4 +1,5 @@
 export default function DataTable({ columns, data, loading, emptyText = 'No records found.' }) {
+
   if (loading) {
     return (
       <div className="py-12 flex items-center justify-center">
