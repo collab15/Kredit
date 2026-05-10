@@ -1,7 +1,7 @@
 const db = require('../db');
 
 const FAVOUR_SELECT = `
-  SELECT f.favour_id, f.description, f.requestor_id, f.requestee_id,
+  SELECT f.favour_id, f.description, f.compensation, f.requestor_id, f.requestee_id,
          req_r.username AS requestor, req_e.username AS requestee,
          CASE WHEN cf.favour_id IS NOT NULL THEN 'completed'
               WHEN pf.favour_id IS NOT NULL THEN 'pending'
@@ -30,7 +30,7 @@ const getFavours = async (req, res) => {
 
 // ── POST create favour ─────────────────────────────────────────────────────
 const createFavour = async (req, res) => {
-  const { description, requestor_id, requestee_id } = req.body;
+  const { description, requestor_id, requestee_id, compensation } = req.body;
   const { role, id: callerId } = req.user;
   const resolvedRequestor = role === 'admin' ? requestor_id : callerId;
 
@@ -40,9 +40,11 @@ const createFavour = async (req, res) => {
   if (resolvedRequestor === requestee_id) {
     const e = new Error('Cannot request a favour from yourself'); e.status = 400; throw e;
   }
+  const comp = parseFloat(compensation) || 0;
+  if (comp < 0) { const e = new Error('Compensation cannot be negative'); e.status = 400; throw e; }
   const { rows: [f] } = await db.query(
-    'INSERT INTO favours (description, requestor_id, requestee_id) VALUES ($1,$2,$3) RETURNING favour_id',
-    [description || null, resolvedRequestor, requestee_id]
+    'INSERT INTO favours (description, requestor_id, requestee_id, compensation) VALUES ($1,$2,$3,$4) RETURNING favour_id',
+    [description || null, resolvedRequestor, requestee_id, comp]
   );
   res.status(201).json({ favour_id: f.favour_id, message: 'Favour created and pending' });
 };
@@ -53,7 +55,7 @@ const completeFavour = async (req, res) => {
   const { review } = req.body;
   const { role, id: callerId } = req.user;
 
-  const { rows } = await db.query('SELECT favour_id, requestee_id FROM pending_favours pf JOIN favours f ON pf.favour_id=f.favour_id WHERE pf.favour_id=$1', [id]);
+  const { rows } = await db.query('SELECT pf.favour_id, f.requestee_id, f.compensation FROM pending_favours pf JOIN favours f ON pf.favour_id=f.favour_id WHERE pf.favour_id=$1', [id]);
   if (!rows.length) { const e = new Error('Favour is not in pending state'); e.status = 400; throw e; }
 
   if (role === 'user' && rows[0].requestee_id !== callerId) {

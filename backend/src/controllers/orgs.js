@@ -187,7 +187,7 @@ const rewardUser = async (req, res) => {
       [amt, description || 'Agency kred reward']
     );
     await client.query(
-      'INSERT INTO rewards (transaction_id, rewarder_id, org_id) VALUES ($1,$2,$3)',
+      'INSERT INTO rewards (transaction_id, rewardee_id, org_id) VALUES ($1,$2,$3)',
       [tx.transaction_id, user_id, org_id]
     );
     await client.query('COMMIT');

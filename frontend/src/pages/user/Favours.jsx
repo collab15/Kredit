@@ -7,7 +7,7 @@ import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import UserLookupInput from '../../components/UserLookupInput';
 
-const EMPTY_FAVOUR   = { requestee_id: '', description: '' };
+const EMPTY_FAVOUR   = { requestee_id: '', description: '', compensation: '' };
 const EMPTY_COMPLETE = { favour_id: '', review: '' };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
@@ -21,6 +21,7 @@ export default function UserFavours() {
   const [requesteeUsername, setRequesteeUsername] = useState('');
   const [requesteeUser,     setRequesteeUser]     = useState(null);
   const [description,       setDescription]       = useState('');
+  const [compensation,      setCompensation]      = useState('');
   const [completion,        setCompletion]        = useState(EMPTY_COMPLETE);
   const [submitting,        setSubmitting]        = useState(false);
 
@@ -45,10 +46,10 @@ export default function UserFavours() {
     if (!requesteeUser) { toast.error('Please enter a valid username'); return; }
     setSubmitting(true);
     try {
-      await favoursApi.create({ requestor_id: user.id, requestee_id: requesteeUser.user_id, description });
+      await favoursApi.create({ requestor_id: user.id, requestee_id: requesteeUser.user_id, description, compensation: parseFloat(compensation) || 0 });
       toast.success('Favour created!');
       setShowCreate(false);
-      setRequesteeUsername(''); setRequesteeUser(null); setDescription('');
+      setRequesteeUsername(''); setRequesteeUser(null); setDescription(''); setCompensation('');
       load();
     } catch (err) { toast.error(err.message); } finally { setSubmitting(false); }
   };
@@ -73,6 +74,7 @@ export default function UserFavours() {
     { key: 'requestor',   label: 'Requestor',   render: (r) => <span className={`font-mono font-medium ${r.requestor_id === user.id ? 'text-accent' : ''}`}>{r.requestor}{r.requestor_id === user.id ? ' (you)' : ''}</span> },
     { key: 'requestee',   label: 'Requestee',   render: (r) => <span className={`font-mono font-medium ${r.requestee_id === user.id ? 'text-accent' : ''}`}>{r.requestee}{r.requestee_id === user.id ? ' (you)' : ''}</span> },
     { key: 'description', label: 'Description', render: (r) => r.description ? <span className="text-muted text-xs">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'compensation', label: 'Compensation', render: (r) => r.compensation > 0 ? <span className="font-mono text-xs text-accent">⚡ {parseFloat(r.compensation).toLocaleString()}</span> : <span className="text-muted">—</span> },
     { key: 'status',      label: 'Status',      render: (r) => <span className={`k-badge ${STATUS_STYLE[r.status] || ''}`}>{r.status}</span> },
     { key: 'done_at',     label: 'Completed',   render: (r) => r.done_at ? <span className="text-xs text-muted">{fmtDate(r.done_at)}</span> : <span className="text-muted">—</span> },
     { key: 'review',      label: 'Review',      render: (r) => r.review ? <span className="text-xs text-muted italic">"{r.review}"</span> : <span className="text-muted">—</span> },
@@ -124,7 +126,7 @@ export default function UserFavours() {
       </div>
 
       {showCreate && (
-        <Modal title="Request a Favour" onClose={() => { setShowCreate(false); setRequesteeUsername(''); setRequesteeUser(null); setDescription(''); }}>
+        <Modal title="Request a Favour" onClose={() => { setShowCreate(false); setRequesteeUsername(''); setRequesteeUser(null); setDescription(''); setCompensation(''); }}>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label className="k-label">Who will do the favour? <span className="text-danger">*</span></label>
@@ -141,6 +143,11 @@ export default function UserFavours() {
               <label className="k-label">Description</label>
               <textarea className="k-input resize-none h-20" placeholder="Help me move furniture this weekend…"
                 value={description} onChange={e => setDescription(e.target.value)} />
+            </div>
+            <div>
+              <label className="k-label">Compensation (kreds, optional)</label>
+              <input className="k-input font-mono" type="number" min="0" step="0.01" placeholder="0"
+                value={compensation} onChange={e => setCompensation(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className="k-btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>

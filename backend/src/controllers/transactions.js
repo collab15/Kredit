@@ -10,7 +10,7 @@ const getAll = async (req, res) => {
 
   if (role === 'user') {
     whereUser = `WHERE (pt.sender_id=$1 OR pt.receiver_id=$1)`;
-    whereOrg  = `WHERE (rw.rewarder_id=$1 OR op.payer_id=$1)`;
+    whereOrg  = `WHERE (rw.rewardee_id=$1 OR op.payer_id=$1)`;
     params = [id];
   } else if (role === 'org') {
     whereUser = `WHERE FALSE`;
@@ -37,9 +37,9 @@ const getAll = async (req, res) => {
            u.username AS to_party
     FROM transactions t
     JOIN rewards rw   ON t.transaction_id = rw.transaction_id
-    JOIN users u      ON rw.rewarder_id   = u.user_id
+    JOIN users u      ON rw.rewardee_id   = u.user_id
     LEFT JOIN org_info oi ON rw.org_id    = oi.org_id
-    ${role === 'user' ? 'WHERE rw.rewarder_id=$1' : (role === 'org' ? 'WHERE rw.org_id=$1' : '')}
+    ${role === 'user' ? 'WHERE rw.rewardee_id=$1' : (role === 'org' ? 'WHERE rw.org_id=$1' : '')}
 
     UNION ALL
 
@@ -84,7 +84,7 @@ const getRewards = async (req, res) => {
   const { role, id } = req.user;
   let where = '';
   let params = [];
-  if (role === 'user') { where = 'WHERE rw.rewarder_id=$1'; params = [id]; }
+  if (role === 'user') { where = 'WHERE rw.rewardee_id=$1'; params = [id]; }
   if (role === 'org')  { where = 'WHERE rw.org_id=$1'; params = [id]; }
 
   const { rows } = await db.query(`
@@ -94,7 +94,7 @@ const getRewards = async (req, res) => {
            rw.org_id
     FROM transactions t
     JOIN rewards rw   ON t.transaction_id = rw.transaction_id
-    JOIN users u      ON rw.rewarder_id   = u.user_id
+    JOIN users u      ON rw.rewardee_id   = u.user_id
     LEFT JOIN org_info oi ON rw.org_id    = oi.org_id
     ${where}
     ORDER BY t.time_stamp DESC
@@ -135,7 +135,7 @@ const getStats = async (req, res) => {
       SELECT COUNT(*) FROM (
         SELECT transaction_id FROM peer_transactions WHERE sender_id=$1 OR receiver_id=$1
         UNION ALL
-        SELECT transaction_id FROM rewards WHERE rewarder_id=$1
+        SELECT transaction_id FROM rewards WHERE rewardee_id=$1
         UNION ALL
         SELECT transaction_id FROM org_payments WHERE payer_id=$1
       ) t

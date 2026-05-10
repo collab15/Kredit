@@ -149,12 +149,14 @@ CREATE TABLE agencies (
 -- FAVOURS
 -- ============================================================
 CREATE TABLE favours (
-  favour_id    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  favour_id    UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
   description  TEXT,
-  requestor_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-  requestee_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  compensation NUMERIC(14,2) NOT NULL DEFAULT 0,
+  requestor_id UUID          NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  requestee_id UUID          NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
 
-  CONSTRAINT no_self_favour CHECK (requestor_id <> requestee_id)
+  CONSTRAINT no_self_favour        CHECK (requestor_id <> requestee_id),
+  CONSTRAINT compensation_non_neg  CHECK (compensation >= 0)
 );
 
 CREATE TABLE pending_favours (
@@ -190,7 +192,7 @@ CREATE TABLE peer_transactions (
 
 CREATE TABLE rewards (
   transaction_id UUID PRIMARY KEY REFERENCES transactions(transaction_id) ON DELETE CASCADE,
-  rewarder_id    UUID NOT NULL    REFERENCES users(user_id)               ON DELETE CASCADE,
+  rewardee_id    UUID NOT NULL    REFERENCES users(user_id)               ON DELETE CASCADE,
   org_id         UUID NOT NULL    REFERENCES orgs(org_id)                 ON DELETE CASCADE
 );
 
@@ -210,7 +212,7 @@ CREATE INDEX ON favours(requestee_id);
 CREATE INDEX ON peer_transactions(sender_id);
 CREATE INDEX ON peer_transactions(receiver_id);
 CREATE INDEX ON rewards(org_id);
-CREATE INDEX ON rewards(rewarder_id);
+CREATE INDEX ON rewards(rewardee_id);
 CREATE INDEX ON transactions(time_stamp DESC);
 CREATE INDEX ON balance_audit(user_id);
 CREATE INDEX ON balance_audit(changed_at DESC);
@@ -257,9 +259,13 @@ CREATE TRIGGER trg_auto_pending_favour
 -- ============================================================
 -- TRIGGER 3
 -- When a pending favour is marked TRUE, move it to completed_favours
+-- and credit the compensation to the requestee
 -- ============================================================
 CREATE OR REPLACE FUNCTION fn_complete_favour()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_compensation NUMERIC(14,2);
+  v_requestee_id UUID;
 BEGIN
   IF NEW.activation_status = TRUE AND OLD.activation_status = FALSE THEN
     -- Add to completed with a timestamp
@@ -268,6 +274,14 @@ BEGIN
 
     -- Remove from pending
     DELETE FROM pending_favours WHERE favour_id = NEW.favour_id;
+
+    -- Credit compensation to requestee if set
+    SELECT compensation, requestee_id INTO v_compensation, v_requestee_id
+    FROM favours WHERE favour_id = NEW.favour_id;
+
+    IF v_compensation > 0 THEN
+      UPDATE users SET balance = balance + v_compensation WHERE user_id = v_requestee_id;
+    END IF;
   END IF;
   RETURN NULL;
 END;
@@ -331,7 +345,7 @@ BEGIN
     RAISE EXCEPTION 'Transaction % not found.', NEW.transaction_id;
   END IF;
 
-  UPDATE users SET balance = balance + v_amount WHERE user_id = NEW.rewarder_id;
+  UPDATE users SET balance = balance + v_amount WHERE user_id = NEW.rewardee_id;
 
   RETURN NEW;
 END;
