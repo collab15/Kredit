@@ -13,6 +13,17 @@ cd ../backend
 npm install
 cd ..
 npm install        # installs concurrently at root
+# New-line(Enter) for last command to execute
+```
+
+## ⚙️ Environment Setup
+
+Make a .env file and fill in your PostgreSQL credentials:
+
+```env
+DATABASE_URL=<postgresql-connection-string>
+PORT=5000
+CLIENT_URL=http://localhost:5173
 ```
 
 ## 🚀 Running the App
@@ -26,19 +37,6 @@ npm run dev        # starts both servers
 - **Frontend** → http://localhost:5173
 - **Backend API** → http://localhost:5000
 
-## ⚙️ Environment Setup
-
-Copy the example env file and fill in your PostgreSQL credentials:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-```env
-DATABASE_URL=postgresql://YOUR_USERNAME:YOUR_PASSWORD@localhost:5432/kredit
-PORT=5000
-CLIENT_URL=http://localhost:5173
-```
 
 ## 🗄️ Database Setup
 
