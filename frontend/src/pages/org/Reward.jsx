@@ -79,7 +79,7 @@ export default function OrgReward() {
                   key={u.user_id}
                   type="button"
                   onClick={() => setSelected(u)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 border-b border-bdr/50 text-left transition-all hover:bg-white/[0.03] ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 border-b border-bdr/50 text-left transition-all hover:bg-accent/5 ${
                     selected?.user_id === u.user_id ? 'bg-accent/5 border-l-2 border-l-accent' : ''
                   }`}
                 >
@@ -124,7 +124,7 @@ export default function OrgReward() {
                 <p className="text-sm font-mono font-bold text-white">{selected.username}</p>
                 <p className="text-[10px] text-muted">Current balance: ⚡ {parseFloat(selected.balance || 0).toLocaleString()}</p>
               </div>
-              <button onClick={() => setSelected(null)} className="ml-auto text-muted hover:text-white text-xs">✕</button>
+              <button onClick={() => setSelected(null)} className="ml-auto text-muted hover:text-accent transition-colors text-xs">✕</button>
             </div>
           )}
 

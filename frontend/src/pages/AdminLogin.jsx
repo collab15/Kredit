@@ -88,7 +88,7 @@ export default function AdminLogin() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-accent transition-colors"
                   onClick={() => setShowPw(v => !v)}
                 >
                   {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
