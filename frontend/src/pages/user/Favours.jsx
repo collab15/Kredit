@@ -33,12 +33,22 @@ export default function UserFavours() {
   };
   useEffect(load, []);
 
-  const filtered = tab === 'all' ? favours : favours.filter(f => f.status === tab);
+  const TAB_FILTER = {
+    all:       () => true,
+    pending:   (f) => f.status === 'pending',
+    completed: (f) => f.status === 'completed',
+    open:      (f) => f.status === 'open',
+    by_me:     (f) => f.requestor_id === user.id,
+    for_me:    (f) => f.requestee_id === user.id,
+  };
+  const filtered = favours.filter(TAB_FILTER[tab] || (() => true));
   const counts   = {
     all:       favours.length,
     pending:   favours.filter(f => f.status === 'pending').length,
     completed: favours.filter(f => f.status === 'completed').length,
     open:      favours.filter(f => f.status === 'open').length,
+    by_me:     favours.filter(f => f.requestor_id === user.id).length,
+    for_me:    favours.filter(f => f.requestee_id === user.id).length,
   };
 
   const handleCreate = async (e) => {
@@ -99,7 +109,7 @@ export default function UserFavours() {
     )},
   ];
 
-  const TABS = [{ key: 'all', label: 'All' }, { key: 'pending', label: 'Pending' }, { key: 'completed', label: 'Completed' }, { key: 'open', label: 'Open' }];
+  const TABS = [{ key: 'all', label: 'All' }, { key: 'by_me', label: 'By Me' }, { key: 'for_me', label: 'For Me' }, { key: 'pending', label: 'Pending' }, { key: 'completed', label: 'Completed' }, { key: 'open', label: 'Open' }];
 
   return (
     <div className="p-8 space-y-6 animate-fade-in">
