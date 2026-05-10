@@ -23,6 +23,7 @@ export default function AdminFavours() {
   const [requesteeName, setRequesteeName] = useState('');
   const [requesteeUser, setRequesteeUser] = useState(null);
   const [description,   setDescription]   = useState('');
+  const [compensation,  setCompensation]  = useState('');
 
   const load = () => {
     setLoading(true);
@@ -45,12 +46,12 @@ export default function AdminFavours() {
     if (requestorUser.user_id === requesteeUser.user_id) { toast.error('Requestor and requestee must be different users'); return; }
     setSubmitting(true);
     try {
-      await favoursApi.create({ requestor_id: requestorUser.user_id, requestee_id: requesteeUser.user_id, description });
+      await favoursApi.create({ requestor_id: requestorUser.user_id, requestee_id: requesteeUser.user_id, description, compensation: parseFloat(compensation) || 0 });
       toast.success('Favour created!');
       setShowCreate(false);
       setRequestorName(''); setRequestorUser(null);
       setRequesteeName(''); setRequesteeUser(null);
-      setDescription('');
+      setDescription(''); setCompensation('');
       load();
     } catch (err) { toast.error(err.message); } finally { setSubmitting(false); }
   };
@@ -72,10 +73,11 @@ export default function AdminFavours() {
   const STATUS_STYLE = { completed: 'bg-kred/10 text-kred', pending: 'bg-warn/10 text-warn', open: 'bg-muted/10 text-muted' };
 
   const columns = [
-    { key: 'requestor',   label: 'Requestor',   render: (r) => <span className="font-mono font-medium">{r.requestor}</span> },
-    { key: 'requestee',   label: 'Requestee',   render: (r) => <span className="font-mono">{r.requestee}</span> },
-    { key: 'description', label: 'Description', render: (r) => r.description ? <span className="text-muted text-xs">{r.description}</span> : <span className="text-muted">—</span> },
-    { key: 'status',      label: 'Status',      render: (r) => <span className={`k-badge ${STATUS_STYLE[r.status] || ''}`}>{r.status}</span> },
+    { key: 'requestor',    label: 'Requestor',    render: (r) => <span className="font-mono font-medium">{r.requestor}</span> },
+    { key: 'requestee',    label: 'Requestee',    render: (r) => <span className="font-mono">{r.requestee}</span> },
+    { key: 'description',  label: 'Description',  render: (r) => r.description ? <span className="text-muted text-xs">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'compensation', label: 'Compensation', render: (r) => r.compensation > 0 ? <span className="font-mono text-xs text-accent">⚡ {parseFloat(r.compensation).toLocaleString()}</span> : <span className="text-muted">—</span> },
+    { key: 'status',       label: 'Status',       render: (r) => <span className={`k-badge ${STATUS_STYLE[r.status] || ''}`}>{r.status}</span> },
     { key: 'done_at',     label: 'Completed',   render: (r) => r.done_at ? <span className="text-xs text-muted">{fmtDate(r.done_at)}</span> : <span className="text-muted">—</span> },
     { key: 'review',      label: 'Review',      render: (r) => r.review ? <span className="text-xs text-muted italic">"{r.review}"</span> : <span className="text-muted">—</span> },
     { key: 'actions',     label: '', render: (r) => (
@@ -124,7 +126,7 @@ export default function AdminFavours() {
       </div>
 
       {showCreate && (
-        <Modal title="Create Favour" onClose={() => { setShowCreate(false); setRequestorName(''); setRequestorUser(null); setRequesteeName(''); setRequesteeUser(null); setDescription(''); }}>
+        <Modal title="Create Favour" onClose={() => { setShowCreate(false); setRequestorName(''); setRequestorUser(null); setRequesteeName(''); setRequesteeUser(null); setDescription(''); setCompensation(''); }}>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label className="k-label">Requestor Username <span className="text-danger">*</span></label>
@@ -152,6 +154,11 @@ export default function AdminFavours() {
               <label className="k-label">Description</label>
               <textarea className="k-input resize-none h-20" placeholder="Help me move furniture…"
                 value={description} onChange={e => setDescription(e.target.value)} />
+            </div>
+            <div>
+              <label className="k-label">Compensation (kreds, optional)</label>
+              <input className="k-input font-mono" type="number" min="0" step="0.01" placeholder="0"
+                value={compensation} onChange={e => setCompensation(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className="k-btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>

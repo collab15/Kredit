@@ -66,6 +66,7 @@ export const favoursApi = {
   getAll:   ()         => api.get('/favours'),
   create:   (data)     => api.post('/favours', data),
   complete: (id, data) => api.put(`/favours/${id}/complete`, data),
+  ignore:   (id)       => api.delete(`/favours/${id}/ignore`),
   remove:   (id)       => api.delete(`/favours/${id}`),
 };
 

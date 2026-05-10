@@ -49,17 +49,17 @@ const createFavour = async (req, res) => {
   res.status(201).json({ favour_id: f.favour_id, message: 'Favour created and pending' });
 };
 
-// ── PUT complete favour ────────────────────────────────────────────────────
+// ── PUT complete favour (requestor only) ───────────────────────────────────
 const completeFavour = async (req, res) => {
   const { id } = req.params;
   const { review } = req.body;
   const { role, id: callerId } = req.user;
 
-  const { rows } = await db.query('SELECT pf.favour_id, f.requestee_id, f.compensation FROM pending_favours pf JOIN favours f ON pf.favour_id=f.favour_id WHERE pf.favour_id=$1', [id]);
+  const { rows } = await db.query('SELECT pf.favour_id, f.requestor_id, f.requestee_id, f.compensation FROM pending_favours pf JOIN favours f ON pf.favour_id=f.favour_id WHERE pf.favour_id=$1', [id]);
   if (!rows.length) { const e = new Error('Favour is not in pending state'); e.status = 400; throw e; }
 
-  if (role === 'user' && rows[0].requestee_id !== callerId) {
-    const e = new Error('Only the requestee can complete this favour'); e.status = 403; throw e;
+  if (role === 'user' && rows[0].requestor_id !== callerId) {
+    const e = new Error('Only the requestor can complete this favour'); e.status = 403; throw e;
   }
 
   await db.query('UPDATE pending_favours SET activation_status=TRUE WHERE favour_id=$1', [id]);
@@ -67,6 +67,25 @@ const completeFavour = async (req, res) => {
     await db.query('UPDATE completed_favours SET review=$1 WHERE favour_id=$2', [review, id]);
   }
   res.json({ message: 'Favour marked as completed' });
+};
+
+// ── DELETE ignore favour (requestee only) ──────────────────────────────────
+const ignoreFavour = async (req, res) => {
+  const { id } = req.params;
+  const { role, id: callerId } = req.user;
+
+  const { rows } = await db.query(
+    'SELECT f.requestee_id FROM pending_favours pf JOIN favours f ON pf.favour_id=f.favour_id WHERE pf.favour_id=$1',
+    [id]
+  );
+  if (!rows.length) { const e = new Error('Favour is not pending'); e.status = 400; throw e; }
+
+  if (role === 'user' && rows[0].requestee_id !== callerId) {
+    const e = new Error('Only the requestee can ignore this favour'); e.status = 403; throw e;
+  }
+
+  await db.query('DELETE FROM favours WHERE favour_id=$1', [id]);
+  res.json({ message: 'Favour ignored and removed' });
 };
 
 // ── DELETE favour ──────────────────────────────────────────────────────────
@@ -85,4 +104,4 @@ const deleteFavour = async (req, res) => {
   res.json({ message: 'Favour deleted' });
 };
 
-module.exports = { getFavours, createFavour, completeFavour, deleteFavour };
+module.exports = { getFavours, createFavour, completeFavour, ignoreFavour, deleteFavour };

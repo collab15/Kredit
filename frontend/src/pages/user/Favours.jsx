@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, CheckCircle, Trash2, Handshake } from 'lucide-react';
+import { Plus, CheckCircle, Trash2, Handshake, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { favoursApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -62,6 +62,12 @@ export default function UserFavours() {
     } catch (err) { toast.error(err.message); } finally { setSubmitting(false); }
   };
 
+  const handleIgnore = async (id) => {
+    if (!confirm('Ignore this favour request? It will be removed.')) return;
+    try { await favoursApi.ignore(id); toast.success('Favour ignored'); load(); }
+    catch (err) { toast.error(err.message); }
+  };
+
   const handleDelete = async (id) => {
     if (!confirm('Delete this favour?')) return;
     try { await favoursApi.remove(id); toast.success('Favour deleted'); load(); }
@@ -80,8 +86,11 @@ export default function UserFavours() {
     { key: 'review',      label: 'Review',      render: (r) => r.review ? <span className="text-xs text-muted italic">"{r.review}"</span> : <span className="text-muted">—</span> },
     { key: 'actions',     label: '', render: (r) => (
       <div className="flex gap-2">
+        {r.status === 'pending' && r.requestor_id === user.id && (
+          <button onClick={() => { setCompletion({ favour_id: r.favour_id, review: '' }); setShowComplete(true); }} className="p-1.5 rounded text-muted hover:text-kred hover:bg-kred/10 transition-all" title="Mark Complete"><CheckCircle size={13} /></button>
+        )}
         {r.status === 'pending' && r.requestee_id === user.id && (
-          <button onClick={() => { setCompletion({ favour_id: r.favour_id, review: '' }); setShowComplete(true); }} className="p-1.5 rounded text-muted hover:text-kred hover:bg-kred/10 transition-all" title="Complete"><CheckCircle size={13} /></button>
+          <button onClick={() => handleIgnore(r.favour_id)} className="p-1.5 rounded text-muted hover:text-warn hover:bg-warn/10 transition-all" title="Ignore"><XCircle size={13} /></button>
         )}
         {r.requestor_id === user.id && r.status !== 'completed' && (
           <button onClick={() => handleDelete(r.favour_id)} className="p-1.5 rounded text-muted hover:text-danger hover:bg-danger/10 transition-all" title="Delete"><Trash2 size={13} /></button>
