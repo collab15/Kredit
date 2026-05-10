@@ -13,6 +13,7 @@ cd ../backend
 npm install
 cd ..
 npm install        # installs concurrently at root
+
 ```
 
 ## 🚀 Running the App
