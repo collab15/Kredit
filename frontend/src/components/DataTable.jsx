@@ -28,7 +28,7 @@ export default function DataTable({ columns, data, loading, emptyText = 'No reco
         </thead>
         <tbody>
           {data.map((row, i) => (
-            <tr key={i} className="border-b border-bdr/40 hover:bg-surface2/70 transition-colors">
+            <tr key={i} className="border-b border-bdr/40 transition-colors hover:bg-[linear-gradient(135deg,_rgba(249,115,22,0.12),_rgba(234,88,12,0.12))]">
               {columns.map((col) => (
                 <td key={col.key} className="py-3 px-4">
                   {col.render ? col.render(row) : (row[col.key] ?? <span className="text-muted">—</span>)}
