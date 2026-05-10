@@ -2,9 +2,8 @@ const bcrypt = require('bcryptjs');
 const db     = require('../db');
 const { sign } = require('../auth');
 
-// ── Login ──────────────────────────────────────────────────────────────────
 const login = async (req, res) => {
-  const { identifier, password, role } = req.body;
+  let { identifier, password, role } = req.body;
   if (!identifier || !password || !role) {
     const e = new Error('identifier, password and role are required'); e.status = 400; throw e;
   }
@@ -12,7 +11,7 @@ const login = async (req, res) => {
   if (role === 'admin') {
     const { rows } = await db.query(
       'SELECT admin_id, username, password FROM admins WHERE username = $1',
-      [identifier]
+      [identifier.toLowerCase().trim()]
     );
     if (!rows.length) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
     const admin = rows[0];
@@ -25,7 +24,7 @@ const login = async (req, res) => {
   if (role === 'user') {
     const { rows } = await db.query(
       'SELECT user_id, username, password FROM users WHERE username = $1',
-      [identifier]
+      [identifier.toLowerCase().trim()]
     );
     if (!rows.length) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
     const user = rows[0];
@@ -47,7 +46,7 @@ const login = async (req, res) => {
       LEFT JOIN agencies  a ON o.org_id = a.org_id
       LEFT JOIN partnered p ON o.org_id = p.org_id
       WHERE o.api_key = $1
-    `, [identifier]);
+    `, [identifier.trim()]);
     if (!rows.length) { const e = new Error('Invalid credentials'); e.status = 401; throw e; }
     const org = rows[0];
     if (!org.password) { const e = new Error('No password set for this org'); e.status = 401; throw e; }
@@ -60,12 +59,12 @@ const login = async (req, res) => {
   const e = new Error('Invalid role'); e.status = 400; throw e;
 };
 
-// ── Register (new user only) ───────────────────────────────────────────────
 const register = async (req, res) => {
-  const { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
+  let { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
   if (!username || !password) {
     const e = new Error('username and password are required'); e.status = 400; throw e;
   }
+  username = username.toLowerCase().trim();
   const hash   = await bcrypt.hash(password, 10);
   const client = await db.pool.connect();
   try {
@@ -95,7 +94,6 @@ const register = async (req, res) => {
   }
 };
 
-// ── Get current session profile ────────────────────────────────────────────
 const me = async (req, res) => {
   const { id, role } = req.user;
 
@@ -126,7 +124,6 @@ const me = async (req, res) => {
     return res.json(rows[0] || {});
   }
 
-  // user
   const { rows } = await db.query(`
     SELECT u.user_id, u.username, u.balance, u.joining_date,
            ui.first_name, ui.last_name, ui.gender, ui.age,

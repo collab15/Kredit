@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Handshake,
-  ArrowLeftRight, Zap, LogOut, User, Send, UserCircle, Award, ShieldCheck,
+  ArrowLeftRight, Zap, LogOut, Send, UserCircle, Award, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,11 +15,11 @@ const ADMIN_NAV = [
 ];
 
 const USER_NAV = [
-  { to: '/user',                icon: LayoutDashboard, label: 'Dashboard'   },
-  { to: '/user/favours',        icon: Handshake,       label: 'Favours'     },
-  { to: '/user/transactions',   icon: ArrowLeftRight,  label: 'Transactions'},
-  { to: '/user/transfer',       icon: Send,            label: 'Transfer'    },
-  { to: '/user/profile',        icon: UserCircle,      label: 'Profile'     },
+  { to: '/user',              icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/user/favours',      icon: Handshake,       label: 'Favours'     },
+  { to: '/user/transactions', icon: ArrowLeftRight,  label: 'Transactions'},
+  { to: '/user/transfer',     icon: Send,            label: 'Transfer'    },
+  { to: '/user/profile',      icon: UserCircle,      label: 'Profile'     },
 ];
 
 const ORG_BASE_NAV = [
@@ -44,44 +44,33 @@ export default function Topbar() {
             : user?.role === 'org'   ? orgNav
             : USER_NAV;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => { logout(); navigate('/login'); };
 
-  const roleColor = user?.role === 'admin' ? 'text-violet-400'
-                  : user?.role === 'org'   ? 'text-cyan-400'
+  const roleColor = user?.role === 'admin' ? 'text-violet-600'
+                  : user?.role === 'org'   ? 'text-kred'
                   : 'text-accent';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-bg/70 backdrop-blur-xl">
+    <header className="k-navbar sticky top-0 z-50">
       <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between">
 
-        {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent text-black flex items-center justify-center glow-accent">
-            <Zap size={18} className="fill-black" />
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center glow-accent">
+            <Zap size={18} className="fill-white text-white" />
           </div>
           <div>
-            <p className="font-mono font-bold tracking-[0.25em] text-sm text-white">KREDIT</p>
+            <p className="font-mono font-bold tracking-[0.25em] text-sm">KREDIT</p>
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Welfare Exchange Network</p>
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex items-center gap-1">
           {nav.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/admin' || to === '/user' || to === '/org'}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all duration-200 ${
-                  isActive
-                    ? 'bg-white/5 text-white border border-white/10'
-                    : 'text-muted hover:text-white hover:bg-white/[0.03]'
-                }`
-              }
+              className={({ isActive }) => `k-nav-item flex items-center gap-2 ${isActive ? 'k-nav-active' : ''}`}
             >
               <Icon size={14} />
               {label}
@@ -89,7 +78,6 @@ export default function Topbar() {
           ))}
         </nav>
 
-        {/* User info + logout */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />

@@ -28,34 +28,34 @@ export default function AdminTransactions() {
 
   const ALL_COLS = [
     { key: 'type',        label: 'Type',   render: (r) => {
-      const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-accent/10 text-accent';
-      return <span className={`k-badge ${cls}`}>{r.type}</span>;
+      const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-orange-100 text-orange-600' : 'bg-accent/10 text-accent';
+      return <span className={`k-badge ${cls}`}>{r.type?.replace('_', ' ')}</span>;
     }},
-    { key: 'from_party',  label: 'From',   render: (r) => <span className="font-mono text-sm">{r.from_party}</span> },
+    { key: 'from_party',  label: 'From',   render: (r) => <span className="font-mono text-sm font-medium">{r.from_party}</span> },
     { key: 'to_party',    label: 'To',     render: (r) => <span className="font-mono text-sm">{r.to_party}</span> },
     { key: 'amount',      label: 'Amount', render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'description', label: 'Note',   render: (r) => r.description ? <span className="text-xs text-slate-400">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'description', label: 'Note',   render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
     { key: 'time_stamp',  label: 'Time',   render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
   const PEER_COLS = [
-    { key: 'sender',      label: 'Sender',   render: (r) => <span className="font-mono text-white">{r.sender}</span> },
-    { key: 'receiver',    label: 'Receiver', render: (r) => <span className="font-mono text-slate-300">{r.receiver}</span> },
+    { key: 'sender',      label: 'Sender',   render: (r) => <span className="font-mono font-medium">{r.sender}</span> },
+    { key: 'receiver',    label: 'Receiver', render: (r) => <span className="font-mono">{r.receiver}</span> },
     { key: 'amount',      label: 'Kreds',    render: (r) => <span className="font-mono font-bold text-accent">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'description', label: 'Note',     render: (r) => r.description ? <span className="text-xs text-slate-400">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'description', label: 'Note',     render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
     { key: 'time_stamp',  label: 'Time',     render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
   const REWARD_COLS = [
-    { key: 'rewarded_user', label: 'User',         render: (r) => <span className="font-mono text-white">{r.rewarded_user}</span> },
-    { key: 'agency_name',   label: 'Agency',       render: (r) => r.agency_name || <span className="text-muted">—</span> },
-    { key: 'agency_scope',  label: 'Scope',        render: (r) => r.agency_scope || <span className="text-muted">—</span> },
-    { key: 'amount',        label: 'Kreds',        render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'time_stamp',    label: 'Time',         render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
+    { key: 'rewarded_user', label: 'User',   render: (r) => <span className="font-mono font-medium">{r.rewarded_user}</span> },
+    { key: 'agency_name',   label: 'Agency', render: (r) => <span className="font-medium">{r.agency_name || <span className="text-muted">—</span>}</span> },
+    { key: 'amount',        label: 'Kreds',  render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
+    { key: 'description',   label: 'Note',   render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'time_stamp',    label: 'Time',   render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
   const ORG_PAY_COLS = [
-    { key: 'payer',       label: 'Payer',        render: (r) => <span className="font-mono text-white">{r.payer}</span> },
-    { key: 'org_name',    label: 'Organization', render: (r) => <span className="font-mono text-cyan-400">{r.org_name}</span> },
+    { key: 'payer',       label: 'Payer',        render: (r) => <span className="font-mono font-medium">{r.payer}</span> },
+    { key: 'org_name',    label: 'Organization', render: (r) => <span className="font-medium text-kred">{r.org_name}</span> },
     { key: 'amount',      label: 'Kreds',        render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'description', label: 'Note',         render: (r) => r.description ? <span className="text-xs text-slate-400">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'description', label: 'Note',         render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
     { key: 'time_stamp',  label: 'Time',         render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
   const COLS_MAP = { all: ALL_COLS, peer: PEER_COLS, rewards: REWARD_COLS, org_payments: ORG_PAY_COLS };
@@ -70,14 +70,14 @@ export default function AdminTransactions() {
   return (
     <div className="p-8 space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-mono text-2xl font-bold text-white">Transactions</h1>
+        <h1 className="font-mono text-2xl font-bold">Transactions</h1>
         <p className="text-muted text-sm mt-1">Full ledger — ⚡ {totalVol.toLocaleString(undefined, { maximumFractionDigits: 2 })} total volume</p>
       </div>
 
       <div className="flex items-center justify-between border-b border-bdr">
         <div className="flex gap-1">
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-2.5 text-sm transition-all relative flex items-center gap-2 ${tab === t.key ? 'text-accent font-medium' : 'text-muted hover:text-slate-300'}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-2.5 text-sm transition-all relative flex items-center gap-2 ${tab === t.key ? 'text-accent font-medium' : 'text-muted hover:text-kred'}`}>
               <t.icon size={13} />{t.label}
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${tab === t.key ? 'bg-accent/10 text-accent' : 'bg-surface2 text-muted'}`}>{t.count}</span>
               {tab === t.key && <span className="absolute bottom-0 left-0 right-0 h-px bg-accent" />}

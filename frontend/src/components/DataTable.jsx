@@ -11,9 +11,7 @@ export default function DataTable({ columns, data, loading, emptyText = 'No reco
   }
 
   if (!data?.length) {
-    return (
-      <div className="py-12 text-center text-muted text-sm">{emptyText}</div>
-    );
+    return <div className="py-12 text-center text-muted text-sm">{emptyText}</div>;
   }
 
   return (
@@ -22,10 +20,7 @@ export default function DataTable({ columns, data, loading, emptyText = 'No reco
         <thead>
           <tr className="border-b border-bdr">
             {columns.map((col) => (
-              <th
-                key={col.key}
-                className="text-left py-3 px-4 text-[10px] text-muted uppercase tracking-widest font-normal whitespace-nowrap"
-              >
+              <th key={col.key} className="text-left py-3 px-4 text-[10px] text-muted uppercase tracking-widest font-normal whitespace-nowrap">
                 {col.label}
               </th>
             ))}
@@ -33,12 +28,9 @@ export default function DataTable({ columns, data, loading, emptyText = 'No reco
         </thead>
         <tbody>
           {data.map((row, i) => (
-            <tr
-              key={i}
-              className="border-b border-bdr/40 hover:bg-surface2/60 transition-colors"
-            >
+            <tr key={i} className="border-b border-bdr/40 hover:bg-surface2/70 transition-colors">
               {columns.map((col) => (
-                <td key={col.key} className="py-3 px-4 text-slate-300">
+                <td key={col.key} className="py-3 px-4">
                   {col.render ? col.render(row) : (row[col.key] ?? <span className="text-muted">—</span>)}
                 </td>
               ))}

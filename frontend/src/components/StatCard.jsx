@@ -4,7 +4,7 @@ export default function StatCard({ title, value, icon: Icon, iconBg, iconColor, 
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-[10px] text-muted uppercase tracking-widest mb-3">{title}</p>
-          <p className="font-mono text-2xl font-bold text-white tabular-nums">
+          <p className="font-mono text-2xl font-bold tabular-nums">
             {loading
               ? <span className="text-muted animate-pulse">—</span>
               : <>{suffix}{typeof value === 'number' ? value.toLocaleString() : (value ?? '—')}</>

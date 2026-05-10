@@ -10,13 +10,11 @@ const USER_SELECT = `
   LEFT JOIN info i       ON ui.info_id = i.info_id
 `;
 
-// ── GET all users (admin only) ─────────────────────────────────────────────
 const getUsers = async (_req, res) => {
   const { rows } = await db.query(USER_SELECT + ' ORDER BY u.joining_date DESC');
   res.json(rows);
 };
 
-// ── GET single user ────────────────────────────────────────────────────────
 const getUser = async (req, res) => {
   const { id } = req.params;
   const { role, id: callerId } = req.user;
@@ -28,12 +26,28 @@ const getUser = async (req, res) => {
   res.json(rows[0]);
 };
 
-// ── POST create user (admin only) ──────────────────────────────────────────
+// ── GET user by username (lookup) ──────────────────────────────────────────
+const lookupUser = async (req, res) => {
+  const { username } = req.query;
+  if (!username) { const e = new Error('username query param required'); e.status = 400; throw e; }
+  const { rows } = await db.query(
+    `SELECT u.user_id, u.username, u.balance,
+            ui.first_name, ui.last_name
+     FROM users u
+     LEFT JOIN user_info ui ON u.user_id = ui.user_id
+     WHERE u.username = $1`,
+    [username.toLowerCase().trim()]
+  );
+  if (!rows.length) { const e = new Error('User not found'); e.status = 404; throw e; }
+  res.json(rows[0]);
+};
+
 const createUser = async (req, res) => {
-  const { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
+  let { username, password, first_name, last_name, gender, age, email, phone, address } = req.body;
   if (!username || !password) {
     const e = new Error('username and password are required'); e.status = 400; throw e;
   }
+  username = username.toLowerCase().trim();
   const hash   = await bcrypt.hash(password, 10);
   const client = await db.pool.connect();
   try {
@@ -62,7 +76,6 @@ const createUser = async (req, res) => {
   }
 };
 
-// ── PUT update user ────────────────────────────────────────────────────────
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { role: callerRole, id: callerId } = req.user;
@@ -95,7 +108,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-// ── DELETE user (admin only) ───────────────────────────────────────────────
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   const { rows } = await db.query('DELETE FROM users WHERE user_id=$1 RETURNING user_id', [id]);
@@ -103,7 +115,6 @@ const deleteUser = async (req, res) => {
   res.json({ message: 'User deleted' });
 };
 
-// ── POST transfer kreds between users ─────────────────────────────────────
 const transferKreds = async (req, res) => {
   const { sender_id, receiver_id, amount, description } = req.body;
   const { role, id: callerId } = req.user;
@@ -143,7 +154,6 @@ const transferKreds = async (req, res) => {
   }
 };
 
-// ── POST transfer kreds to a partnered org ─────────────────────────────────
 const transferToOrg = async (req, res) => {
   const { org_id, amount, description } = req.body;
   const { role, id: callerId } = req.user;
@@ -182,7 +192,6 @@ const transferToOrg = async (req, res) => {
   }
 };
 
-// ── GET user transaction history ───────────────────────────────────────────
 const getUserTransactions = async (req, res) => {
   const { id } = req.params;
   const { role, id: callerId } = req.user;
@@ -203,15 +212,19 @@ const getUserTransactions = async (req, res) => {
     UNION ALL
 
     SELECT t.transaction_id, t.amount, t.description, t.time_stamp,
-           'reward' AS type, 'received' AS direction, 'Agency' AS counterpart
+           'reward' AS type,
+           'received' AS direction,
+           COALESCE(oi.name, oi.delegate, 'Agency') AS counterpart
     FROM transactions t
     JOIN rewards rw ON t.transaction_id = rw.transaction_id
+    LEFT JOIN org_info oi ON rw.org_id = oi.org_id
     WHERE rw.rewarder_id=$1
 
     UNION ALL
 
     SELECT t.transaction_id, t.amount, t.description, t.time_stamp,
-           'org_payment' AS type, 'sent' AS direction,
+           'org_payment' AS type,
+           'sent' AS direction,
            COALESCE(oi.name, oi.delegate, 'Organization') AS counterpart
     FROM transactions t
     JOIN org_payments op ON t.transaction_id = op.transaction_id
@@ -223,7 +236,6 @@ const getUserTransactions = async (req, res) => {
   res.json(rows);
 };
 
-// ── GET balance audit for a user ───────────────────────────────────────────
 const getUserBalanceAudit = async (req, res) => {
   const { id } = req.params;
   const { role, id: callerId } = req.user;
@@ -237,4 +249,4 @@ const getUserBalanceAudit = async (req, res) => {
   res.json(rows);
 };
 
-module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, transferKreds, transferToOrg, getUserTransactions, getUserBalanceAudit };
+module.exports = { getUsers, getUser, lookupUser, createUser, updateUser, deleteUser, transferKreds, transferToOrg, getUserTransactions, getUserBalanceAudit };

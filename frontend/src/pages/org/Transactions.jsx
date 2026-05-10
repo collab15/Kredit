@@ -7,8 +7,8 @@ import DataTable from '../../components/DataTable';
 const fmtTime = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 export default function OrgTransactions() {
-  const { user }     = useAuth();
-  const isAgency     = user?.org_type === 'agency';
+  const { user }  = useAuth();
+  const isAgency  = user?.org_type === 'agency';
   const [txs,     setTxs]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState('');
@@ -22,24 +22,25 @@ export default function OrgTransactions() {
   const totalVol = txs.reduce((s, t) => s + parseFloat(t.amount || 0), 0);
 
   const REWARD_COLS = [
-    { key: 'rewarded_user', label: 'User',    render: (r) => <span className="font-mono text-white">{r.rewarded_user}</span> },
-    { key: 'agency_scope',  label: 'Scope',   render: (r) => r.agency_scope || <span className="text-muted">—</span> },
-    { key: 'amount',        label: 'Kreds',   render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'description',   label: 'Note',    render: (r) => r.description ? <span className="text-xs text-slate-400">{r.description}</span> : <span className="text-muted">—</span> },
-    { key: 'time_stamp',    label: 'Time',    render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
+    { key: 'rewarded_user', label: 'User',   render: (r) => <span className="font-mono font-medium">{r.rewarded_user}</span> },
+    { key: 'agency_name',   label: 'Agency', render: (r) => <span className="font-medium text-kred">{r.agency_name || '—'}</span> },
+    { key: 'amount',        label: 'Kreds',  render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
+    { key: 'description',   label: 'Note',   render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'time_stamp',    label: 'Time',   render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
 
   const PAY_COLS = [
-    { key: 'payer',       label: 'Paid By',      render: (r) => <span className="font-mono text-white">{r.payer}</span> },
-    { key: 'amount',      label: 'Kreds',        render: (r) => <span className="font-mono font-bold text-cyan-400">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
-    { key: 'description', label: 'Note',         render: (r) => r.description ? <span className="text-xs text-slate-400">{r.description}</span> : <span className="text-muted">—</span> },
+    { key: 'payer',       label: 'Paid By',      render: (r) => <span className="font-mono font-medium">{r.payer}</span> },
+    { key: 'org_name',    label: 'Organization', render: (r) => <span className="font-medium text-kred">{r.org_name || '—'}</span> },
+    { key: 'amount',      label: 'Kreds',        render: (r) => <span className="font-mono font-bold text-kred">⚡ {parseFloat(r.amount).toLocaleString()}</span> },
+    { key: 'description', label: 'Note',         render: (r) => r.description ? <span className="text-xs text-muted">{r.description}</span> : <span className="text-muted">—</span> },
     { key: 'time_stamp',  label: 'Time',         render: (r) => <span className="text-xs text-muted">{fmtTime(r.time_stamp)}</span> },
   ];
 
   return (
     <div className="p-8 space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-mono text-2xl font-bold text-white">{isAgency ? 'Rewards Issued' : 'Payments Received'}</h1>
+        <h1 className="font-mono text-2xl font-bold">{isAgency ? 'Rewards Issued' : 'Payments Received'}</h1>
         <p className="text-muted text-sm mt-1">⚡ {totalVol.toLocaleString(undefined, { maximumFractionDigits: 2 })} total kreds</p>
       </div>
 
