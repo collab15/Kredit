@@ -22,7 +22,7 @@ export default function UserTransactions() {
 
   const columns = [
     { key: 'type',        label: 'Type',      render: (r) => {
-      const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-orange-100 text-orange-600' : 'bg-accent/10 text-accent';
+      const cls = r.type === 'reward' ? 'bg-kred/10 text-kred' : r.type === 'favour_compensation' ? 'bg-kred/10 text-kred' : r.type === 'org_payment' ? 'bg-orange-100 text-orange-600' : 'bg-accent/10 text-accent';
       return <span className={`k-badge ${cls}`}>{r.type?.replace('_', ' ')}</span>;
     }},
     { key: 'direction',   label: 'Direction', render: (r) => (

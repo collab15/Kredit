@@ -218,7 +218,20 @@ const getUserTransactions = async (req, res) => {
     FROM transactions t
     JOIN rewards rw ON t.transaction_id = rw.transaction_id
     LEFT JOIN org_info oi ON rw.org_id = oi.org_id
-    WHERE rw.rewarder_id=$1
+    WHERE rw.rewardee_id=$1
+
+    UNION ALL
+
+    SELECT gen_random_uuid() AS transaction_id, f.compensation AS amount,
+           COALESCE(f.description, 'Favour compensation') AS description,
+           cf.done_at AS time_stamp,
+           'favour_compensation' AS type,
+           'received' AS direction,
+           u.username AS counterpart
+    FROM completed_favours cf
+    JOIN favours f ON cf.favour_id = f.favour_id
+    JOIN users u   ON f.requestor_id = u.user_id
+    WHERE f.requestee_id=$1 AND f.compensation > 0
 
     UNION ALL
 
